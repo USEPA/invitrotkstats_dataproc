@@ -273,6 +273,9 @@ merge_level0 <- function(data.label="MYDATA",
   chem.dtxsid.col="DTXSID"
   )
 {
+  # Eliminate duplicat rows from chem.ids:
+  chem.ids <- subset(chem.ids, !duplicated(chem.ids))
+  
   level0.catalog <- as.data.frame(level0.catalog)
   
 # These arguments allow the user to specify a single value for every observation 

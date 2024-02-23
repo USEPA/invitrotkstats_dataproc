@@ -1,0 +1,373 @@
+---
+title: "Crizer 2023 LC PFAS Clint Data"
+author: "John Wambaugh"
+date: "February 22, 2024"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Crizer 2024 Clint Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+wambaugh.john@epa.gov
+
+# Here's the new R package for analyzing these data:
+```{r load_packages, eval = TRUE}  
+    library(invitroTKstats)
+    
+    # There are multiple packages for loading Excel files, but I've been using this
+    # one lately:
+    library(readxl)
+```
+
+    # Clear memory:
+```{r clear_memory, eval = TRUE}     
+    rm(list=ls())
+```
+
+Note that the following code chunks describe how the data.frame kreutz2023.clint
+was created. Since we have already created this "level1" file we can just load
+it from the invitroTKstats package. Any chunk that includes the statement 
+"eval = FALSE" is not evaluated when the vignette is created.
+
+    # Change to the directory that has your Excel file 
+    # (this is where it is on my computer):
+```{r set_working_directory, eval = TRUE}   
+    setwd("c:/users/jwambaug/git/invitroTKstats/working/CrizerPFAS")
+``` 
+# Describe chemical tested:
+```{r test_Chemicals, eval=TRUE}
+ANALYSIS.LABEL <- "CrizerPFASFeb2024"
+
+chem.ids <- as.data.frame(read_excel("CrizerChemIDs-Feb2024.xlsx"))
+```
+# Load mass-spectrometry data:
+```{r load_data, eval=TRUE}
+data.guide <- as.data.frame(read_excel("dataguide-DC-hep-Feb2024.xlsx"))
+
+dc.hep <- merge_level0(data.label=ANALYSIS.LABEL,
+# describe the MS data table:
+             level0.catalog=data.guide,
+             type.colname.col="Type.ColName",
+             istd.col="ISTD.Name",
+             analysis.param.colname.col="RT.ColName",
+             additional.colnames="Note",
+             additional.colname.cols="Note.ColName",
+# describe the chemical ID table:
+             chem.ids=chem.ids,
+             chem.lab.id.col="Chemical",
+             chem.name.col="Chemical",
+             num.rows.col="Num.Rows")
+```
+
+```{r annotate_data}
+# Set reasonable sig figs on retention time:
+dc.hep$Analysis.Params <- signif(as.numeric(dc.hep$Analysis.Params), 6)
+
+# Get rid of NA notes:
+dc.hep[is.na(dc.hep$Note),"Note"] <- ""
+
+# Use invitroTKstats annotation of type for Crizer lab samples:
+dc.hep <- subset(dc.hep,!is.na(Type))
+dc.hep[regexpr("std",tolower(dc.hep[,"Type"]))!=-1, "Sample.Type"] <- "CC"
+dc.hep[(regexpr("blank", tolower(dc.hep[,"Sample"])) != -1 &
+       regexpr("media", tolower(dc.hep[,"Sample"])) != -1), "Sample.Type"] <- 
+       "Blank"
+dc.hep[regexpr("unknown",tolower(dc.hep[,"Type"]))!=-1, 
+               "Sample.Type"] <- "Cvst"
+dc.hep[regexpr("no_cells",tolower(dc.hep[,"Sample"]))!=-1, 
+               "Sample.Type"] <- "Inactive"
+
+# Use invitroTKstats annotation of type for wetmore lab samples:
+dc.hep[dc.hep$Type %in% c("Standard"), "Sample.Type"] <- "CC"
+dc.hep[dc.hep$Type %in% c("Blank"), "Sample.Type"] <- "Blank"
+for (this.string in c("t0-","t0 ","t15-","t15 ",
+                      "t30-","t30 ","t60-","t60 ",
+                      "t120-","t120 ","t240-", "t240 "))
+  dc.hep[regexpr(this.string, tolower(dc.hep[,"Note"]))!=-1, 
+               "Sample.Type"] <- "Cvst"
+dc.hep[regexpr("inactive",tolower(dc.hep[,"Note"]))!=-1, 
+               "Sample.Type"] <- "Inactive"
+dc.hep[regexpr("wem",tolower(dc.hep[,"Note"]))!=-1, 
+               "Sample.Type"] <- NA
+
+# Figure out from sample name whether the hepatocytes were alive:
+# Indicate whether hepatocytes have been inactivated:
+dc.hep$Active.Hep <- NA
+
+ 
+# Add time of sample:
+dc.hep <- subset(dc.hep,!is.na(dc.hep[,"Sample"]))
+dc.hep[,"Time"] <- NA
+dc.hep[regexpr("no_cells",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 240/60
+# Do this time first since zeros show up in other names:
+dc.hep[regexpr("0min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 0/60
+dc.hep[regexpr("240min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 240/60
+dc.hep[regexpr("120min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 120/60
+dc.hep[regexpr("90min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 90/60
+dc.hep[regexpr("60min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 60/60
+dc.hep[regexpr("30min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 30/60
+dc.hep[regexpr("15min",tolower(dc.hep[,"Sample"]))!=-1,"Time"] <- 15/60
+
+# Annotate time for Wetmore samples:
+for (this.time in c(0,15,30,60,120,240))
+{
+  this.time.str <- paste0("t",this.time,"-")
+  dc.hep[regexpr(this.time.str,
+                 tolower(dc.hep[,"Note"]))!=-1,"Time"] <- this.time/60
+  this.time.str <- paste0("t",this.time," ")
+  dc.hep[regexpr(this.time.str,
+                 tolower(dc.hep[,"Note"]))!=-1,"Time"] <- this.time/60
+}
+
+# Differentiate live hepatocytes from inactive:
+dc.hep[dc.hep[,"Sample.Type"] %in% "Cvst", "Active.Hep"] <- 1
+dc.hep[dc.hep[,"Sample.Type"] %in% "Inactive", "Active.Hep"] <- 0
+```
+
+# Identify Wetmore lab chemicals:
+```{r wetmore_chems}
+wetmore.files <- c(
+  "Hep13-Hep14-to-JFW_PFAS.xlsx",
+  "PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx",
+  "20231106_HepCl_ReRun_KR.xlsx",
+  "20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx"
+  )
+```
+
+# Set the dilution facor for the various samples:
+```{r dilution_factors}
+dc.hep$Dilution.Factor <- 1
+dc.hep[!(dc.hep$Level0.File %in% wetmore.files) & 
+       dc.hep[,"Sample.Type"] %in% c("Cvst","Inactive"), 
+       "Dilution.Factor"] <- 4
+
+dc.hep[dc.hep$Level0.File %in% wetmore.files,
+  "Dilution.Factor"] <- 480
+
+dc.hep[dc.hep$Level0.File %in% wetmore.files & 
+       dc.hep$DTXSID %in% c(
+  "DTXSID50226894",
+  "DTXSID50379814",
+  "DTXSID00880026"
+  ),
+  "Dilution.Factor"] <- 720
+
+dc.hep[dc.hep$Level0.File %in% wetmore.files & 
+       dc.hep$Sample.Type %in% c(
+  "CC",
+  "Blank"
+  ),
+  "Dilution.Factor"] <- 240
+```
+
+
+# Make sure the areas are numeric:
+```{r numeric_peaks}
+dc.hep$Peak.Area <- as.numeric(dc.hep$Peak.Area)
+dc.hep$ISTD.Peak.Area <- as.numeric(dc.hep$ISTD.Peak.Area)
+dc.hep[,"Compound.Conc"] <- as.numeric(dc.hep[,"Compound.Conc"])
+```
+
+
+# No ISTD for Crizer samples:
+```{r no.istd}
+dc.hep[!(dc.hep$Level0.File %in% wetmore.files),"ISTD.Peak.Area"] <- 1
+```
+
+# Second runs not used for Wetmore:
+```{r not.really.blanks}
+dc.hep[dc.hep$Type=="Blank" & 
+       regexpr("blank",tolower(dc.hep$Note))==-1,"Sample.Type"] <- NA
+```
+
+# Convert nM standard concs to uM:
+```{r nmtoum}
+dc.hep[,"Compound.Conc"] <- as.numeric(dc.hep[,"Compound.Conc"])/1000
+dc.hep[dc.hep$Sample.Type %in% c("Blank"), "Compound.Conc"] <- 0
+```
+
+```{r setinstruments}
+dc.hep[!(dc.hep$Level0.File %in% wetmore.files),"Instrument"] <- "Waters Xevo TQ-S micro (QEB0036)"
+dc.hep[(dc.hep$Level0.File %in% wetmore.files),"Instrument"] <- "Waters Xevo TQS-Micro UPLC-MS/MS"
+```
+# Create level 1 file:
+```{r level1}
+level1 <- format_clint(dc.hep,
+  FILENAME=ANALYSIS.LABEL,
+  sample.col ="Sample",
+  date.col="Date",
+  compound.col="Compound",
+  lab.compound.col="Lab.Compound.ID",
+  type.col="Sample.Type",
+  dilution.col="Dilution.Factor",
+  cal.col="Date",
+  istd.conc = 10/1000,
+  area.col="Peak.Area",
+  istd.col= "ISTD.Peak.Area",
+  density = 0.5,
+  clint.assay.conc = 1,
+  note.col="Note",
+  std.conc.col="Compound.Conc",
+  time.col = "Time",
+  analysis.method = "UPLC-MS/MS",
+  analysis.instrument.col = "Instrument",
+  analysis.parameters.col = "Analysis.Params"
+  )
+```
+
+```{r create_level2file}
+level2 <- level1
+level2[!(level2$Level0.File %in% wetmore.files), "Verified"] <- "Y"
+level2[(level2$Level0.File %in% wetmore.files), "Verified"] <- "Y"
+
+# Special annotation for DTXSID70565479
+level2[level2$Lab.Sample.Name %in% c(
+  "20220428_PFAS_Clint_Hep14_WAX_Sample005",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample006",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample012",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample013",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample014",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample016",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample017",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample018",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample020",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample021",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample022",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample024",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample025"
+  ), "Verified"] <- "BAW: Ignore"
+
+# 20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx used two different mixtures of
+# PFAS for testing, but the MS instrument ran in an automated mode, unaware that
+# some chemicals were only in mixture "WAX1", and others were only in "WAX2":
+level2[level2$Level0.File %in% 
+         "20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx" &
+       level2$DTXSID %in% c(
+         "DTXSID5061954",
+         "DTXSID40880025",
+         "DTXSID50381073") &
+       regexpr("WAX1", level2$Note)!=-1, "Verified"] <- "Not in WAX1"
+level2[level2$Level0.File %in% 
+         "20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx" &
+       level2$DTXSID %in% c(
+         "DTXSID80380256",
+         "DTXSID90558000") &
+       regexpr("WAX2", level2$Note)!=-1, "Verified"] <- "Not in WAX2"
+
+# PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx used two different mixtures of
+# PFAS for testing, but the MS instrument ran in an automated mode, unaware that
+# some chemicals were only in mixture "WAX1", and others were only in "WAX2":
+level2[level2$Level0.File %in% 
+         "PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx" &
+       level2$DTXSID %in% c(
+         "DTXSID50226894",
+         "DTXSID50379814",
+         "DTXSID00880026") &
+       regexpr("WAX1", level2$Note)!=-1, "Verified"] <- "Not in WAX1"
+level2[level2$Level0.File %in% 
+         "PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx" &
+       level2$DTXSID %in% c(
+         "DTXSID90382620",
+         "DTXSID1032646") &
+       regexpr("WAX2", level2$Note)!=-1, "Verified"] <- "Not in WAX2"
+
+
+level2[level2$Level0.File %in% wetmore.files &
+       regexpr("Mobile Phase Blank",level2$Note)!=-1, "Verified"] <- "Ignored"
+
+level2[level2$Level0.File %in% wetmore.files &
+       regexpr("WAX SPE Matrix Blank",level2$Note)!=-1, "Verified"] <- "Ignored"
+
+level2[level2$Level0.File %in% wetmore.files &
+       regexpr("WAX SPE Blank",level2$Note)!=-1, "Verified"] <- "Ignored"
+
+level2[level2$Level0.File %in% wetmore.files &
+       regexpr("WAX QC-A",level2$Note)!=-1, "Verified"] <- "Ignored"
+
+level2[level2$Level0.File %in% wetmore.files &
+       regexpr("WAX QC-B",level2$Note)!=-1, "Verified"] <- "Ignored"
+
+level2[sapply(level2[,"Note"], function(x) "Excluded" %in% x), 
+              "Verified"] <- "Excluded"
+level2[sapply(level2[,"Note"], function(x) "Response Low" %in% x), 
+              "Verified"] <- "Excluded"
+
+# Three mixes used in "20231106_HepCl_ReRun_KR.xlsx":
+# DTXSID70379917 and DTXSID8047553 were in Mix 1
+these.chems <- c("DTXSID70379917", "DTXSID8047553")
+this.mix <- "Mix 1"
+level2[# Only want to touch data from this file:
+       level2$Level0.File %in% "20231106_HepCl_ReRun_KR.xlsx" &
+       # Only want to touch these chemicals:
+       level2$DTXSID %in% these.chems &
+       # Only want to touch measurements of mixtures:
+       regexpr("Mix", level2$Note)!= -1 &
+       # Get rid of measurements from wrong mixtures:
+       regexpr(this.mix, level2$Note) == -1, "Verified"] <- "Only in Mix 1"
+# DTXSID6067331 and DTXSID00192353 were in Mix 2
+these.chems <- c("DTXSID6067331", "DTXSID00192353")
+this.mix <- "Mix 2"
+level2[# Only want to touch data from this file:
+       level2$Level0.File %in% "20231106_HepCl_ReRun_KR.xlsx" &
+       # Only want to touch these chemicals:
+       level2$DTXSID %in% these.chems &
+       # Only want to touch measurements of mixtures:
+       regexpr("Mix", level2$Note)!= -1 &
+       # Get rid of measurements from wrong mixtures:
+       regexpr(this.mix, level2$Note) == -1, "Verified"] <- "Only in Mix 2"
+# DTXSID50226894 and DTXSID5061954 were in Mix 3
+these.chems <- c("DTXSID50226894", "DTXSID5061954")
+this.mix <- "Mix 3"
+level2[# Only want to touch data from this file:
+       level2$Level0.File %in% "20231106_HepCl_ReRun_KR.xlsx" &
+       # Only want to touch these chemicals:
+       level2$DTXSID %in% these.chems &
+       # Only want to touch measurements of mixtures:
+       regexpr("Mix", level2$Note)!= -1 &
+       # Get rid of measurements from wrong mixtures:
+       regexpr(this.mix, level2$Note) == -1, "Verified"] <- "Only in Mix 3"
+
+level2[level2$Lab.Sample.Name %in% c(
+  "20220428_PFAS_Clint_Hep14_WAX_Sample005",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample006",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample012",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample013",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample014",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample016",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample017",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample018",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample020",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample021",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample022",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample024",
+  "20220428_PFAS_Clint_Hep14_WAX_Sample025"), "Verified"] <- "Ignored"
+
+write.table(level2,
+  file=paste0(ANALYSIS.LABEL,"-Clint-Level2.tsv"),
+  sep="\t",
+  row.names=F,
+  quote=F)
+```  
+
+```{r plot_data}
+for (this.id in unique(level2$DTXSID))
+{
+  this.subset <- subset(level2,DTXSID==this.id)
+  try(plot(this.subset$Time,this.subset$Area,main=unique(this.subset$Compound.Name)))
+}
+```
+
+```{r point_estimates}
+level3 <- calc_clint_point(FILENAME=ANALYSIS.LABEL)
+```
+
+# repeat these bits in case a markov chain crashes and we need to restart:
+```{r bayes_estimates}
+library(invitroTKstats)
+setwd("c:/users/jwambaug/git/invitroTKstats/working/CrizerPFAS")
+
+level4 <- calc_clint(FILENAME=ANALYSIS.LABEL,
+                          NUM.CORES=8,
+                          decrease.prob = 0.05,
+                          JAGS.PATH="C:/Users/jwambaug/AppData/Local/JAGS/JAGS-4.3.0/x64")  
+``` 
