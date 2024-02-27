@@ -7,3 +7,48 @@ Compound.Name	DTXSID	Lab.Compound.Name	Clint.1.Med	Clint.1.Low	Clint.1.High	Clin
 6:3 Fluorotelomer carboxylic acid (6:3 FTCA)	DTXSID70379917	6:3 Fluorotelomer carboxylic acid (6:3 FTCA)	0	0	0	NA	NA	NA	0.987	0.751	0.989
 Perfluoroundecanoic acid (PFUnDA)	DTXSID8047553	Perfluoroundecanoic acid (PFUnDA)	0	0	50.7	NA	NA	NA	0.95	0.751	0.95
 Perfluoro-3,6-dioxadecanoic acid (PFPE-5)	DTXSID50381073	Perfluoro-3,6-dioxadecanoic acid (PFPE-5)	298	147	470	NA	NA	NA	0.0148	0.751	0
+2H,2H,3H,3H-Perfluorooctanoic acid (5:3 FTCA)	DTXSID20874028	2H,2H,3H,3H-Perfluorooctanoic acid (5:3 FTCA)	19	14.2	21.4	NA	NA	NA	0	0.751	0.953
+Potassium perfluorooctanoate (KPFOA)	DTXSID00880026	Potassium perfluorooctanoate (KPFOA)	0	0	0	NA	NA	NA	0.998	0.751	0.0013
+N-Methylperfluorooctanesulfonamide (NMeFOSA)	DTXSID1067629	N-Methylperfluorooctanesulfonamide (NMeFOSA)	48.7	40.3	60.3	NA	NA	NA	0	0.748	0
+Perfluoroheptanoic acid (PFHpA)	DTXSID1037303	Perfluoroheptanoic acid (PFHpA)	0	0	7.37	NA	NA	NA	0.949	0.747	0.0085
+2-(Perfluorohexyl)ethylphosphonic acid	DTXSID20179883	2-(Perfluorohexyl)ethylphosphonic acid	0	0	0	NA	NA	NA	1	0.747	1
+3,3-Bis(trifluoromethyl)-2-propenoic acid	DTXSID30170109	3,3-Bis(trifluoromethyl)-2-propenoic acid	0	0	11.4	NA	NA	NA	0.768	0.75	0.221
+Perfluorodecanoic acid (PFDA)	DTXSID3031860	Perfluorodecanoic acid (PFDA)	0	0	0	NA	NA	NA	1	0.75	0
+Perfluorohexanoic acid (PFHxA)	DTXSID3031862	Perfluorohexanoic acid (PFHxA)	0	0	0	NA	NA	NA	0.998	0.751	0
+Perfluorooctanesulfonic acid (PFOS)	DTXSID3031864	Perfluorooctanesulfonic acid (PFOS)	0	0	6.13	NA	NA	NA	0.961	0.75	0
+Potassium perfluorobutanesulfonate (KPFBS)	DTXSID3037707	Potassium perfluorobutanesulfonate (KPFBS)	0	0	0	NA	NA	NA	1	0.752	0
+Potassium perfluorohexanesulfonate (KPFHxS)	DTXSID3037709	Potassium perfluorohexanesulfonate (KPFHxS)	8.27	5.1	10.6	NA	NA	NA	0.0117	0.752	0.99
+Perfluoro-3,6-dioxaheptanoic acid (PFPE-3)	DTXSID30382063	Perfluoro-3,6-dioxaheptanoic acid (PFPE-3)	0	0	0	NA	NA	NA	0.998	0.748	4e-04
+Perfluorotetradecanoic acid (PFTeDA)	DTXSID3059921	Perfluorotetradecanoic acid (PFTeDA)	0	0	0	NA	NA	NA	0.997	0.754	1
+4:2 Fluorotelomer sulfonic acid (4:2 FTS)	DTXSID30891564	4:2 Fluorotelomer sulfonic acid (4:2 FTS)	0	0	4.27	NA	NA	NA	0.973	0.75	0.0216
+3-(Perfluoroisopropyl)-2-propenoic acid	DTXSID40380257	3-(Perfluoroisopropyl)-2-propenoic acid	0	0	0	NA	NA	NA	0.992	0.749	0.00522
+Perfluorobutanoic acid (PFBA)	DTXSID4059916	Perfluorobutanoic acid (PFBA)	0	0	0	NA	NA	NA	0.975	0.748	0.0231
+Sodium perfluorooctanoate (NaPFOA)	DTXSID40880025	Sodium perfluorooctanoate (NaPFOA)	0	0	0	NA	NA	NA	0.995	0.753	0.00022
+Perfluorobutanesulfonic acid (PFBS)	DTXSID5030030	Perfluorobutanesulfonic acid (PFBS)	0	0	5.6	NA	NA	NA	0.968	0.752	0
+4H-Perfluorobutanoic_acid	DTXSID50892417	4H-Perfluorobutanoic_acid	0	0	0	NA	NA	NA	0.997	0.748	0
+2,2,2-Trifluoroethyl_perfluorobutanesulfonate	DTXSID60380390	2,2,2-Trifluoroethyl_perfluorobutanesulfonate	0	0	0	NA	NA	NA	0.999	0.752	0
+Perfluoro(4-methoxybutanoic)_acid	DTXSID60500450	Perfluoro(4-methoxybutanoic)_acid	0	0	0	NA	NA	NA	0.996	0.749	0
+Perfluoropentanoic_acid	DTXSID6062599	Perfluoropentanoic_acid	0	0	0	NA	NA	NA	0.999	0.748	0
+Perfluoro-4-isopropoxybutanoic_acid	DTXSID60663110	Perfluoro-4-isopropoxybutanoic_acid	0	0	0	NA	NA	NA	1	0.752	0
+Sodium_perfluorodecanesulfonate	DTXSID60892443	Sodium_perfluorodecanesulfonate	4.87	0	8.03	NA	NA	NA	0.384	0.749	0.894
+Perfluoro-3-methoxypropanoic_acid	DTXSID70191136	Perfluoro-3-methoxypropanoic_acid	0	0	0	NA	NA	NA	1	0.749	0
+Perfluorohexanesulfonic_acid	DTXSID7040150	Perfluorohexanesulfonic_acid	0	0	9.67	NA	NA	NA	0.874	0.751	0.122
+Perfluorooctanesulfonate	DTXSID80108992	Perfluorooctanesulfonate	0	0	0	NA	NA	NA	0.98	0.749	0.0199
+Perfluorononanoic_acid	DTXSID8031863	Perfluorononanoic_acid	10.4	0	14.3	NA	NA	NA	0.373	0.755	0.627
+Perfluorooctanoic_acid	DTXSID8031865	Perfluorooctanoic_acid	0	0	0	NA	NA	NA	1	0.749	0
+Potassium_perfluorooctanesulfonate	DTXSID8037706	Potassium_perfluorooctanesulfonate	0	0	0	NA	NA	NA	0.999	0.75	0
+Ammonium_perfluorooctanoate	DTXSID8037708	Ammonium_perfluorooctanoate	10.8	0	13.5	NA	NA	NA	0.109	0.748	0.883
+Perfluorooctanesulfonamido_ammonium_iodide	DTXSID8051419	Perfluorooctanesulfonamido_ammonium_iodide	0	0	0	NA	NA	NA	0.994	0.748	0
+Perfluoroheptanesulfonic_acid	DTXSID8059920	Perfluoroheptanesulfonic_acid	0	0	0	NA	NA	NA	0.999	0.746	0
+Perfluoropropanoic_acid	DTXSID8059970	Perfluoropropanoic_acid	0	0	0	NA	NA	NA	0.988	0.75	0.00662
+Perfluoro-1-octanesulfonyl_chloride	DTXSID90315130	Perfluoro-1-octanesulfonyl_chloride	0	0	0	NA	NA	NA	1	0.748	0
+Perfluorotridecanoic_acid	DTXSID90868151	Perfluorotridecanoic_acid	0	0	0	NA	NA	NA	0.992	0.746	0
+Perfluorononanoyl chloride	DTXSID00379925	Perfluorononanoyl chloride	773	640	917	NA	NA	NA	0	0.749	0
+6:3 Fluorotelomer carboxylic acid	DTXSID70379917	6:3 Fluorotelomer carboxylic acid	8.23	0	16.7	NA	NA	NA	0.42	0.749	0
+8H-Perfluorooctanoic acid	DTXSID70565479	8H-Perfluorooctanoic acid	0	0	0	NA	NA	NA	0.982	0.748	0.984
+Pentadecafluorooctanoyl chloride	DTXSID40187142	Pentadecafluorooctanoyl chloride	0	0	0	NA	NA	NA	0.979	0.748	0.993
+Perfluoroheptanoyl chloride	DTXSID80382154	Perfluoroheptanoyl chloride	0	0	5.37	NA	NA	NA	0.973	0.749	0.983
+3-Perfluoroheptylpropanoic acid (7:3 FTCA)	DTXSID90382620	3-Perfluoroheptylpropanoic acid (7:3 FTCA)	15.6	0	22.8	NA	NA	NA	0.0334	0.752	0
+N-Ethylperfluorooctanesulfonamide	DTXSID1032646	N-Ethylperfluorooctanesulfonamide	164	0	249	NA	NA	NA	0.0589	0.747	0
+Perfluoro(2-ethoxyethane)sulfonic acid	DTXSID50379814	Perfluoro(2-ethoxyethane)sulfonic acid	275	0	329	NA	NA	NA	0.0927	0.749	2e-05
+Potassium_perfluorooctanoate	DTXSID00880026	Potassium_perfluorooctanoate	0	0	49.7	NA	NA	NA	0.951	0.751	0.951
