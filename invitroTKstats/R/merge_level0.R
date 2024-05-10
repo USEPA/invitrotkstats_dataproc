@@ -376,7 +376,7 @@ merge_level0 <- function(data.label="MYDATA",
       stop(paste0("Chem ID ",this.chem," not found in table chem.ids column ",
                   chem.lab.id.col))
     } else {
-      id.index <- which(chem.ids[, chem.lab.id.col]==this.chem)
+      id.index <- which(chem.ids[, chem.lab.id.col]==this.chem)[1]
       this.name <- chem.ids[id.index, chem.name.col]
       this.dtxsid <- chem.ids[id.index, chem.dtxsid.col]
     }

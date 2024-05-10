@@ -1,0 +1,63 @@
+File	Sheet	Skip.Rows	Date	Chemical.ID	ISTD.Name	Sample.ColName	Type.ColName	Peak.ColName	ISTD.Peak.ColName	Conc.ColName	AnalysisParam.ColName	Num.Rows	Note.ColName
+Hep13-Hep14-to-JFW_PFAS_REV.xlsx	Hep14-Raw-for JFW	19	042822	8H-Perfluorooctanoic acid	M8PFOA	Name	Sample Text	Area	IS Area	Std. Conc	RT	192	Verified
+Hep13-Hep14-to-JFW_PFAS_REV.xlsx	Hep14-Raw-for JFW	607	042822	Pentadecafluorooctanoyl chloride	M8PFOA	Name	Sample Text	Area	IS Area	Std. Conc	RT	192	Verified
+Hep13-Hep14-to-JFW_PFAS_REV.xlsx	Hep14-Raw-for JFW	215	042822	Perfluoroheptanoyl chloride	M4PFHpA	Name	Sample Text	Area	IS Area	Std. Conc	RT	192	Verified
+Hep13-Hep14-to-JFW_PFAS_REV.xlsx	Hep14-Raw-for JFW	803	0428822	Perfluoro-3,6,9-trioxadecanoic acid (PFPE-4)	M8PFOA	Name	Sample Text	Area	IS Area	Std. Conc	RT	192	Verified
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	777	111323	9-H-Perfluorononanoic acid (9H-PFNA)	M9PFNA	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	1805	111323	11-H-Perfluoroundecanoic acid (11H-PFUnDA)	M7PFUdA	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	263	111323	6:2 Fluorotelomer sulfonic acid (6:2 FTS)	M2-6:2 FTS	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	1291	111323	8:2 Fluorotelomer sulfonic acid (8:2 FTS)	M2-8:2 FTS	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx	PFAS Raw Data	6	020322	4,4-bis(Trifluoromethyl)-4-fluoropropanoic acid	M5PFPeA	Name	Type	Area	IS Area	Std. Conc	RT	165	Sample Text
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	6	111323	6:3 Fluorotelomer carboxylic acid (6:3 FTCA)	M2-6:2 FTS	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20231106_HepCl_ReRun_KR.xlsx	Raw Data	2062	111323	Perfluoroundecanoic acid (PFUnDA)	M7PFUdA	Name	Type	Area	IS Area	Std. Conc	RT	253	Sample Text
+20220203_Hep12_SPEcassette_MGS-DataSummary.xlsx	PFAS Raw Data	1020	020322	Perfluoro-3,6-dioxadecanoic acid (PFPE-5)	M6PFDA	Name	Type	Area	IS Area	Std. Conc	RT	165	Sample Text
+PFAS9_Long.XLS	2H,2H,3H,3H-Perfluorooctanoళ_1	4	092220	2H,2H,3H,3H-Perfluorooctanoic acid (5:3 FTCA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS4_Long.XLS	Potassium_perfluorooctanoate	4	092020	Potassium perfluorooctanoate (KPFOA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS5_Long.XLS	N-Ethylperfluorooctanesulfoৼ_1	4	092020	N-Methylperfluorooctanesulfonamide (NMeFOSA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS6_Long.XLS	Perfluoroheptanoic_acid	4	092120	Perfluoroheptanoic acid (PFHpA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS7_Long.XLS	N-Methylperfluorooctanesulfৼ_1	4	092120	N-Methylperfluorooctanesulfonamide (NMeFOSA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS8_Long.XLS	2-(Perfluorohexyl)ethylphosৈ_1	4	092220	2-(Perfluorohexyl)ethylphosphonic acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS10_Long.XLS	3,3-Bis(trifluoromethyl)-2-ਯ_1	4	092320	3,3-Bis(trifluoromethyl)-2-propenoic acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS11_Long.XLS	Perfluorodecanoic_acid	4	092320	Perfluorodecanoic acid (PFDA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS12_Long.XLS	Perfluorohexanoic_acid	4	092420	Perfluorohexanoic acid (PFHxA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS13_Long.XLS	Perfluorooctanesulfonic_acid	4	092420	Perfluorooctanesulfonic acid (PFOS)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS14_Long.XLS	Potassium_perfluorobutanesuৈ_1	4	092520	Potassium perfluorobutanesulfonate (KPFBS)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS16_Long.XLS	Perfluoro-3,6-dioxaheptanoiच_1	4	092820	Perfluoro-3,6-dioxaheptanoic acid (PFPE-3)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS 18_Long.XLS	Perfluorooctanesufonamide	4	092920	Perfluorooctanesulfonamide	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS19_reinject_Long.XLS	Perfluorotetradecanoic_acid	4	100720	Perfluorotetradecanoic acid (PFTeDA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS20_Long.XLS	4_2_Fluorotelomer_sulfonic_acid	4	100120	4:2 Fluorotelomer sulfonic acid (4:2 FTS)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS21_Long.XLS	3-(Perfluoroisopropyl)-2-prඤ_1	4	100120	3-(Perfluoroisopropyl)-2-propenoic acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS22_Long.XLS	Perfluorobutanoic_acid	4	100320	Perfluorobutanoic acid (PFBA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS23_Long.XLS	Sodium_perfluorooctanoate	4	100420	Sodium perfluorooctanoate (NaPFOA)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS24_Long.XLS	Perfluorobutanesulfonic_acid	4	100420	Perfluorobutanesulfonic acid (PFBS)	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS28_Long.XLS	4H-Perfluorobutanoic_acid	4	020221	4H-Perfluorobutanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS29_Long.XLS	2,2,2-Trifluoroethyl_perflu੪_1	4	100720	2,2,2-Trifluoroethyl_perfluorobutanesulfonate	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS30_Long.XLS	Perfluoro(4-methoxybutanoicਗ਼_1	4	100720	Perfluoro(4-methoxybutanoic)_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS31_Long.XLS	Perfluoropentanoic_acid	4	100820	Perfluoropentanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS32_Long.XLS	Perfluoro-4-isopropoxybutanफ_1	4	101020	Perfluoro-4-isopropoxybutanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS34_Long.XLS	Sodium_perfluorodecanesulfonate	4	101120	Sodium_perfluorodecanesulfonate	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS35_Long.XLS	Perfluoro-3-methoxypropanoiछ_1	4	101120	Perfluoro-3-methoxypropanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS36_Long.XLS	Perfluorohexanesulfonic_acid	4	101120	Perfluorohexanesulfonic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS37_Long.XLS	Perfluorooctanesulfonate	4	013021	Perfluorooctanesulfonate	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS38_Long_reinjected.XLS	Perfluorononanoic_acid	4	020421	Perfluorononanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS39_Long.XLS	Perfluorooctanoic_acid	4	013121	Perfluorooctanoic_acid	None	Filename	Sample Type	Area	ISTD Area	Exp Amt	RT	NA	Peak Status
+PFAS40_Short.XLS	Potassium_perfluorooctanesu౨_1	4	012621	Potassium_perfluorooctanesulfonate	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS41_Short.XLS	Ammonium_perfluorooctanoate	4	012621	Ammonium_perfluorooctanoate	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS43_Short.XLS	Perfluorooctanesulfonamido_࣋_1	4	012721	Perfluorooctanesulfonamido_ammonium_iodide	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS44_Short.XLS	Perfluoroheptanesulfonic_acid	4	012821	Perfluoroheptanesulfonic_acid	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS47_Short.XLS	Perfluoropropanoic_acid	4	012821	Perfluoropropanoic_acid	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS48_Short.XLS	Perfluoro-1-octanesulfonyl_ऄ_1	4	012921	Perfluoro-1-octanesulfonyl_chloride	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS49_Short.XLS	Perfluorotridecanoic_acid	4	012921	Perfluorotridecanoic_acid	None	Filename	Sample Type	Area...5	ISTD Area	Amount...8	RT	NA	Peak Status
+PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx	PFAS RAW	826	081921	3-Perfluoroheptylpropanoic acid (7:3 FTCA)	M9PFNA	Name	Type	Area	IS Area	Std. Conc	RT	160	Sample Text
+PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx	PFAS RAW	1154	081921	N-Ethylperfluorooctanesulfonamide	M8FOSA	Name	Type	Area	IS Area	Std. Conc	RT	160	Sample Text
+PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx	PFAS RAW	6	081921	Perfluoro(2-ethoxyethane)sulfonic acid	M4PFHpA	Name	Type	Area	IS Area	Std. Conc	RT	160	Sample Text
+PFAS_20210902_Hep11_Data_to_JFW_20220318.xlsx	PFAS RAW	498	081921	Potassium_perfluorooctanoate	M8PFOA	Name	Type	Area	IS Area	Std. Conc	RT	160	Sample Text
+Hep13-Hep14-to-JFW_PFAS_REV.xlsx	Hep13 Raw Data for JFW	288	042322	6:3 Fluorotelomer carboxylic acid	M8-PFOA	Name	...16	Area	IS Area	Std. Conc	RT	131	...16
+20240206_HepCl_KR_to_JFW-SDF_20240222.xlsx	Raw Data-NoRefCmpd	6	012224	Potassium perfluorohexanesulfonate	M3PFHxS	Name	Type	Area	IS Area	Std. Conc	RT	151	Sample Text
+20240206_HepCl_KR_to_JFW-SDF_20240222.xlsx	Raw Data-NoRefCmpd	316	012224	Sodium perfluorooctanoate	M8PFOA	Name	Type	Area	IS Area	Std. Conc	RT	151	Sample Text
+20240206_HepCl_KR_to_JFW-SDF_20240222.xlsx	Raw Data-NoRefCmpd	626	012224	Perfluorooctanesulfonamide	M8FOSA	Name	Type	Area	IS Area	Std. Conc	RT	151	Sample Text
+2023_09_19_Biotransformation_HepCl_KR_baw_to-JFW-SDF.xlsx	RawData	3030	091923	PFPE-1	M4PFHpA	Name	Type	Area	IS Area	Std. Conc	RT	409	Sample Text
+2023_09_19_Biotransformation_HepCl_KR_baw_to-JFW-SDF.xlsx	RawData	510	091923	PFPE-2	M5PFPeA	Name	Type	Area	IS Area	Std. Conc	RT	409	Sample Text
+2023_09_19_Biotransformation_HepCl_KR_baw_to-JFW-SDF.xlsx	RawData	6	091923	PFPE-3	M5PFPeA	Name	Type	Area	IS Area	Std. Conc	RT	409	Sample Text
+2023_09_19_Biotransformation_HepCl_KR_baw_to-JFW-SDF.xlsx	RawData	4038	091923	PFHxSA	M3PFHxS	Name	Type	Area	IS Area	Std. Conc	RT	409	Sample Text
+2023_09_19_Biotransformation_HepCl_KR_baw_to-JFW-SDF.xlsx	RawData	1518	091923	3:3 FTCA	M3PFBS	Name	Type	Area	IS Area	Std. Conc	RT	409	Sample Text
