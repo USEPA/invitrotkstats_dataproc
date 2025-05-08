@@ -273,9 +273,6 @@ merge_level0 <- function(data.label="MYDATA",
   chem.dtxsid.col="DTXSID"
   )
 {
-  # Eliminate duplicat rows from chem.ids:
-  chem.ids <- subset(chem.ids, !duplicated(chem.ids))
-  
   level0.catalog <- as.data.frame(level0.catalog)
   
 # These arguments allow the user to specify a single value for every observation 
@@ -376,7 +373,7 @@ merge_level0 <- function(data.label="MYDATA",
       stop(paste0("Chem ID ",this.chem," not found in table chem.ids column ",
                   chem.lab.id.col))
     } else {
-      id.index <- which(chem.ids[, chem.lab.id.col]==this.chem)[1]
+      id.index <- which(chem.ids[, chem.lab.id.col]==this.chem)
       this.name <- chem.ids[id.index, chem.name.col]
       this.dtxsid <- chem.ids[id.index, chem.dtxsid.col]
     }

@@ -232,6 +232,9 @@ calc_clint <- function(
 #
 # What concentrations were tested (1 and 10 uM typical):
 #
+ # Establish a vector of unique nominal test concentrations:
+    Test.conc <- sort(unique(unique(this.cvt[,"Clint.Assay.Conc"])))
+    Num.conc <- length(Test.conc)
 #
 # How many separate mass-spec calibrations were made:
 #
@@ -245,16 +248,11 @@ calc_clint <- function(
 #
 # Extract the observations
     this.cvt <- subset(this.data, Sample.Type=="Cvst")
-
     obs <-  this.cvt[!is.na(this.cvt[,time.col]), "Response"]
     Num.obs <- length(obs)
     obs.time <- this.cvt[!is.na(this.cvt[,time.col]), "Time"]
     obs.df <- this.cvt[!is.na(this.cvt[,time.col]), "Dilution.Factor"]
     obs.conc <- rep(NA, Num.obs)
-
-    # Establish a vector of unique nominal test concentrations:
-    Test.conc <- sort(unique(unique(this.cvt[,"Clint.Assay.Conc"])))
-    Num.conc <- length(Test.conc)
     for (this.conc in Test.conc)
     {
       obs.conc[this.cvt[

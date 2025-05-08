@@ -75,16 +75,13 @@ plot_clint <- function(level2,dtxsid)
       paste(cols[!(cols%in%colnames(level2))],collapse=", ")))
   }
 
-  level2 <- subset(level2, !is.na(Time) & 
-                     DTXSID==dtxsid & Verified=="Y")
+  level2 <- subset(level2, DTXSID==dtxsid)
 
   out <- ggplot(level2, aes(x=Time, y=Response)) +
     geom_point(mapping = aes(
       fill = factor(Sample.Type),
       shape = factor(Sample.Type),
-      color=factor(Calibration)), size = 3)+
-      scale_y_log10()+
-      ggtitle(dtxsid)
+      color=factor(Calibration)), size = 5)
   print(out)
   return(out)
 }
