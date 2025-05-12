@@ -2,19 +2,50 @@
 % Please edit documentation in R/calc_caco2_point.R
 \name{calc_caco2_point}
 \alias{calc_caco2_point}
-\title{Calculate a point estimate of apparent membrane permeability from Caco-2 data}
+\title{Calculate a Point Estimate of Apparent Membrane Permeability (Papp) from Caco-2 data (Level-3)}
 \usage{
-calc_caco2_point(FILENAME, good.col = "Verified")
+calc_caco2_point(
+  FILENAME,
+  data.in,
+  good.col = "Verified",
+  output.res = FALSE,
+  sig.figs = 3,
+  INPUT.DIR = NULL,
+  OUTPUT.DIR = NULL
+)
 }
 \arguments{
-\item{FILENAME}{A string used to identify the input file, whatever the
-argument given, "-Caco-2-Level2.tsv" is appended (defaults to "MYDATA")}
+\item{FILENAME}{(Character) A string used to identify the input level-2 file,
+"<FILENAME>-Caco-2-Level2.tsv" (if importing from a .tsv file), and/or used 
+to identify the output level-3 file, "<FILENAME>-Caco-2-Level3.tsv" (if exporting).}
 
-\item{good.col}{Name of a column indicating which rows have been verified for
-analysis, indicated by a "Y" (Defaults to "Verified")}
+\item{data.in}{(Data Frame) A level-2 data frame generated from the 
+\code{format_caco2} function with a verification column added by 
+\code{sample_verification}. Complement with manual verification if needed.}
+
+\item{good.col}{(Character) Column name indicating which rows have been
+verified, data rows valid for analysis are indicated with a "Y".
+(Defaults to "Verified".)}
+
+\item{output.res}{(Logical) When set to \code{TRUE}, the result 
+table (level-3) will be exported to the user's per-session temporary 
+directory or \code{OUTPUT.DIR} (if specified) as a .tsv file. 
+(Defaults to \code{FALSE}.)}
+
+\item{sig.figs}{(Numeric) The number of significant figures to round the exported result table (level-3). 
+(Note: console print statements are also rounded to specified significant figures.) 
+(Defaults to \code{3}.)}
+
+\item{INPUT.DIR}{(Character) Path to the directory where the input level-2 file exists. 
+If \code{NULL}, looking for the input level-2 file in the current working
+directory. (Defaults to \code{NULL}.)}
+
+\item{OUTPUT.DIR}{(Character) Path to the directory to save the output file. 
+If \code{NULL}, the output file will be saved to the user's per-session temporary
+directory or \code{INPUT.DIR} if specified. (Defaults to \code{NULL}.)}
 }
 \value{
-\item{data.frame}{A data.frame in standardized format}
+\item{data.frame}{A level-3 data.frame in standardized format}
 \tabular{rrr}{
   C0_A2B \tab Time zero donor concentration \tab Mass Spec Response Ratio (RR) \cr
   dQdt_A2B \tab Estimated rate of mass movement through membrane \tab RR*cm^3/s \cr
@@ -23,25 +54,33 @@ analysis, indicated by a "Y" (Defaults to "Verified")}
   dQdt_B2A \tab Estimated rate of mass movement through membrane \tab RR*cm^3/s \cr
   Papp_B2A \tab Apparent membrane permeability \tab 10^-6 cm/s\cr
   Refflux \tab Efflux ratio \tab unitless\cr
+  Frec_A2B.vec \tab Fraction recovered for the apical-basolateral direction, calculated as the fraction of the initial donor amount recovered in the receiver compartment (collapsed numeric vector, values for replicates separated by a "|") \tab unitless \cr
+  Frec_A2B.mean \tab Mean of the fraction recovered for the apical-basolateral direction \tab unitless \cr
+  Frec_B2A.vec \tab Fraction recovered for the basolateral-apical direction, calculated in the same way as Frec_A2B.vec but in the opposite transport direction (collapsed numeric vector, values for replicates separated by a "|") \tab unitless \cr 
+  Frec_B2A.mean \tab Mean of the fraction recovered for the basolateral-apical direction \tab unitless \cr
+  Recovery_Class_A2B.vec \tab Recovery classification for apical-to-basolateral permeability("Low Recovery" if Frec_A2B.vec < 0.4 or "High Recovery" if Frec_A2B.vec > 2.0) (collapsed character vector, values for replicates separated by a "|") \tab qualitative category \cr
+  Recovery_Class_A2B.mean \tab Recovery classification for the mean apical-to-basolateral permeability("Low Recovery" if Frec_A2B.mean < 0.4 or "High Recovery" if Frec_A2B.mean > 2.0) \tab qualitative category \cr
+  Recovery_Class_B2A.vec \tab Recovery classification for basolateral-to-apical permeability("Low Recovery" if Frec_B2A.vec < 0.4 or "High Recovery" if Frec_B2A.vec > 2.0) (collapsed character vector, values for replicates separated by a "|") \tab qualitative category \cr
+  Recovery_Class_B2A.mean \tab Recovery classification for the mean basolateral-to-apical permeability("Low Recovery" if Frec_B2A.mean < 0.4 or "High Recovery" if Frec_B2A.mean > 2.0) \tab qualitative category \cr
 }
 }
 \description{
-This function uses mass spectrometry (MS) peak areas
-from samples collected as part of in vitro measurement of membrane
-permeability using Caco-2 cells \insertCite{hubatsch2007determination}{invitroTKstats}.
-Data are read from a "Level2" text file that should have been formatted and
-created
-by \code{\link{format_caco2}} (this is the "Level1" file). The Level1 file
-should have been curated by adding a column with the value "Y" indicating
-that each row is verified as usable for analysis (that is, the Level2 file).
+This function calculates a point estimate of apparent membrane permeability (Papp)
+using mass spectrometry (MS) peak areas from samples collected as part of in 
+vitro measurements of membrane permeability using Caco-2 cells \insertCite{hubatsch2007determination}{invitroTKstats}.
 }
 \details{
+The input to this function should be "level-2" data. Level-2 data is level-1,
+data formatted with the \code{\link{format_caco2}} function, and curated
+with a verification column. "Y" in the verification column indicates the
+data row is valid for analysis. 
+
 The data frame of observations should be annotated according to direction
-(either apical to basal -- "AtoB" -- or basal to apical -- "BtoA") and type
+(either apical to basolateral -- "AtoB" -- or basolateral to apical -- "BtoA") and type
 of concentration measured:
 \tabular{rr}{
   Blank with no chemical added \tab Blank \cr
-  Dosing vehicle (C0) at target concentration \tab D0\cr
+  Target concentration added to donor compartment at time 0 (C0) \tab D0\cr
   Donor compartment at end of experiment \tab D2\cr
   Receiver compartment at end of experiment\tab R2\cr
 }
@@ -49,51 +88,62 @@ of concentration measured:
 Apparent membrane permeability (\eqn{P_{app}}) is calculated from MS responses as:
 
 
-\eqn{P_{app} = \frac{dQ/dt}{c_0/A}}
+\eqn{P_{app} = \frac{dQ/dt}{c_0*A}}
 
 The rate of permeation, \eqn{\frac{dQ}{dt}}\eqn{\left(\frac{\text{peak area}}{\text{time (s)}} \right)} is calculated as:
 
-\eqn{\frac{dQ}{dt} = \max\left(0, \frac{\sum_{i=1}^{n_P} (r_P * c_{DF})}{n_P} - \frac{\sum_{i=1}^{n_B} (r_B * c_{DF})}{n_B}\right)}
+\eqn{\frac{dQ}{dt} = \max\left(0, \frac{\sum_{i=1}^{n_{R2}} (r_{R2} * c_{DF})}{n_{R2}} - \frac{\sum_{i=1}^{n_{BL}} (r_{BL} * c_{DF})}{n_{BL}}\right)}
 
-where \eqn{r_P} is PBS Response, \eqn{c_{DF}} is Dilution Factor, \eqn{r_B} is Blank Response,
-\eqn{n_P} is the number of PBS Responses, and \eqn{n_B} is the number of Blank Responses.
+where \eqn{r_{R2}} is Receiver Response, \eqn{c_{DF}} is the corresponding Dilution Factor, \eqn{r_{BL}} is Blank Response,
+\eqn{n_{R2}} is the number of Receiver Responses, and \eqn{n_{BL}} is the number of Blank Responses.
+
+If the output level-3 result table is chosen to be exported and an output 
+directory is not specified, it will be exported to the user's R session
+temporary directory. This temporary directory is a per-session directory 
+whose path can be found with the following code: \code{tempdir()}. For more 
+details, see \url{https://www.collinberke.com/til/posts/2023-10-24-temp-directories/}.
+
+As a best practice, \code{INPUT.DIR} (when importing a .tsv file) and/or \code{OUTPUT.DIR} should be 
+specified to simplify the process of importing and exporting files. This 
+practice ensures that the exported files can easily be found and will not be 
+exported to a temporary directory.
 }
 \examples{
-library(invitroTKstats)
+## Load example level-2 data
+level2 <- invitroTKstats::caco2_L2
 
-level0 <- TO1caco2
-level1 <- format_caco2(level0,
-   FILENAME="EPACyprotex2021",
-   sample.col="SampleName",
-   dtxsid.col="CompoundName",
-   lab.compound.col="CompoundName",
-   cal=1,
-   istd.conc.col="ISTD.Conc",
-   compound.col="CompoundName",
-   compound.conc.col="Test.Target.Conc",
-   membrane.area=0.11,
-   series=1,
-   analysis.parameters="Feature",
-   analysis.instrument="GC or LC",
-   analysis.method="Mass Spec"
-   )
+## scenario 1: 
+## input level-2 data from the R session and do not export the result table
+level3 <- calc_caco2_point(data.in = level2, output.res = FALSE)
 
-level2 <- level1
-level2$Verified <- "Y"
+## scenario 2: 
+## import level-2 data from a 'tsv' file and export the result table to 
+## same location as INPUT.DIR 
+\dontrun{
+## Refer to sample_verification help file for how to export level-2 data to a directory.
+## Unless a different path is specified in OUTPUT.DIR,
+## the result table will be saved to the directory specified in INPUT.DIR.
+## Will need to replace FILENAME and INPUT.DIR with name prefix and location of level-2 'tsv'.
+level3 <- calc_caco2_point(# e.g. replace with "Examples" from "Examples-Caco-2-Level2.tsv" 
+                           FILENAME="<level-2 FILENAME prefix>", 
+                           INPUT.DIR = "<level-2 FILE LOCATION>",
+                           output.res = TRUE)
+}
 
-write.table(level2,
-  file="EPACyprotex2021-Caco-2-Level2.tsv",
-  sep="\t",
-  row.names=F,
-  quote=F)
-
-level3 <- calc_caco2_point(FILENAME="EPACyprotex2021")
-
-write.table(level3,
-  file="EPACyprotex2021-Caco-2-Level3.tsv",
-  sep="\t",
-  row.names=F,
-  quote=F)
+## scenario 3: 
+## input level-2 data from the R session and export the result table to the 
+## user's temporary directory
+## Will need to replace FILENAME with desired level-2 filename prefix. 
+\dontrun{
+level3 <- calc_caco2_point(# e.g. replace with "MYDATA"
+                           FILENAME = "<desired level-2 FILENAME prefix>",
+                           data.in = level2,
+                           output.res = TRUE)
+# To delete, use the following code. For more details, see the link in the 
+# "Details" section. 
+file.remove(list.files(tempdir(), full.names = TRUE, 
+pattern = "<desired level-2 FILENAME prefix>-Caco-2-Level3.tsv"))
+}
 
 }
 \references{
