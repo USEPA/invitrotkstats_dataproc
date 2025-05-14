@@ -1,5 +1,5 @@
 ---
-title: "Crizer 2023 LC PFAS Clint Data"
+title: "Crizer 2024 Clint Data"
 author: "John Wambaugh"
 date: "April 15, 2024"
 output: rmarkdown::html_vignette
@@ -9,6 +9,13 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 wambaugh.john@epa.gov
+
+
+# Abstract
+## In Vitro Hepatic Clearance Evaluations of Per- and Polyfluoroalkyl Substances (PFAS) across Multiple Structural Categories
+Toxicokinetic (TK) assays and in vitro–in vivo extrapolation (IVIVE) models are New Approach Methods (NAMs) used to translate in vitro points of departure to exposure estimates required to reach equivalent blood concentrations. Per- and polyfluoroalkyl substances (PFAS) are a large chemical class with wide-ranging industrial applications for which only limited toxicity data are available for human health evaluation. To address the lack of TK data, a pooled primary human hepatocyte suspension model was used with targeted liquid chromatography–mass spectrometry to investigate substrate depletion for 54 PFAS. A median value of 4.52 µL/(min x million cells) was observed across those that showed significant clearance, with 35 displaying no substrate depletion. Bayesian modeling propagated uncertainty around clearance values for use in IVIVE models. Structural evaluations showed the fluorotelomer carboxylic acids were the only PFAS carboxylates showing appreciable clearance, and per- and polyfluorosulfonamides were more readily metabolized than other PFAS sulfonates. Biotransformation product prediction, using the chemical transformation simulator, suggested hydrolysis of PFAS sulfonamides to more stable sulfonic acids, which is an important consideration for exposure modeling. This effort greatly expands the PFAS in vitro toxicokinetic dataset, enabling refined TK modeling, in silico tool development, and NAM-based human health evaluations across this important set of emerging contaminants.
+
+https://doi.org/10.3390/toxics12090672
 
 # Here's the new R package for analyzing these data:
 ```{r load_packages, eval = TRUE}  
