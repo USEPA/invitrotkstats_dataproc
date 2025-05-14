@@ -2,89 +2,113 @@
 % Please edit documentation in R/calc_fup_red.R
 \name{calc_fup_red}
 \alias{calc_fup_red}
-\title{Calculate fraction unbound in plasma from rapid equilibruim dialysis data}
+\title{Calculate Fraction Unbound in Plasma (Fup) from Rapid Equilibrium Dialysis 
+(RED) Data with Bayesian Modeling (Level-4)}
 \usage{
 calc_fup_red(
   FILENAME,
+  data.in,
   TEMP.DIR = NULL,
   NUM.CHAINS = 5,
   NUM.CORES = 2,
   RANDOM.SEED = 1111,
   good.col = "Verified",
   JAGS.PATH = NA,
-  Physiological.Protein.Conc = 70/(66.5 * 1000) * 1e+06
+  Physiological.Protein.Conc = 70/(66.5 * 1000) * 1e+06,
+  save.MCMC = FALSE,
+  sig.figs = 3,
+  INPUT.DIR = NULL,
+  OUTPUT.DIR = NULL
 )
 }
 \arguments{
-\item{FILENAME}{A string used to identify outputs of the function call.
-(defaults to "BASE_Model_Results")}
+\item{FILENAME}{(Character) A string used to identify the input level-2 file,
+"<FILENAME>-fup-RED-Level2.tsv", and to name the exported model results. 
+This argument is required no matter which method of specifying input data is used. 
+(Defaults to \code{NULL}.)}
 
-\item{TEMP.DIR}{An optional directory where file writing may be faster.}
+\item{data.in}{(Data Frame) A level-2 data frame generated from the 
+\code{format_fup_red} function with a verification column added by 
+\code{sample_verification}. Complement with manual verification if needed.}
 
-\item{NUM.CHAINS}{The number of Markov Chains to use. This allows evaluation
-of convergence according to Gelman and Rubin diagnostic.}
+\item{TEMP.DIR}{(Character) Temporary directory to save intermediate files. 
+If \code{NULL}, all files will be written to the user's per-session temporary
+directory. 
+(Defaults to \code{NULL}.)}
 
-\item{NUM.CORES}{The number of processors to use (default 2)}
+\item{NUM.CHAINS}{(Numeric) The number of Markov Chains to use. (Defaults to 5.)}
 
-\item{RANDOM.SEED}{The seed used by the random number generator
-(default 1111)}
+\item{NUM.CORES}{(Numeric) The number of processors to use for parallel computing. (Defaults to 2.)}
 
-\item{JAGS.PATH}{The file path to JAGS.}
+\item{RANDOM.SEED}{The seed used by the random number generator.
+(Defaults to 1111.)}
 
-\item{MS.data}{A data frame containing mass-spectrometry peak areas,
-indication of chemical identity, and measurement type.}
+\item{good.col}{(Character) Column name indicating which rows have been 
+verified for analysis, valid data rows are indicated with "Y". (Defaults to "Verified".)}
 
-\item{this.conc}{The plasma protein concentration relative to physiologic
-levels (default 100\%)}
+\item{JAGS.PATH}{(Character) Computer specific file path to JAGS software. (Defaults to \code{NA}.)}
 
-\item{sample.col}{Which column of MS.data indicates the unique mass
-spectrometry (MS) sample name used by the laboratory. (Defaults to
-"Lab.Sample.Name")}
+\item{Physiological.Protein.Conc}{(Numeric) The assumed physiological protein concentration 
+for plasma protein binding calculations. (Defaults to 70/(66.5*1000)*1000000.
+According to \insertCite{berg2011pathology;textual}{invitroTKstats}: 60-80 mg/mL, albumin is 66.5 kDa,
+assume all protein is albumin to estimate default in uM.)}
 
-\item{lab.compound.col}{Which column of MS.data indicates The test compound
-name used by the laboratory (Defaults to "Lab.Compound.Name")}
+\item{save.MCMC}{(Logical) When set to \code{TRUE}, will export the MCMC results
+as an .RData file. (Defaults to \code{FALSE}.)}
 
-\item{dtxsid.col}{Which column of MS.data indicates EPA's DSSTox Structure
-ID (\url{http://comptox.epa.gov/dashboard}) (Defaults to "DTXSID")}
+\item{sig.figs}{(Numeric) The number of significant figures to round the exported unverified data (level-2). 
+The exported result table (level-4) is left unrounded for reproducibility. 
+(Note: console print statements are also rounded to specified significant figures.) 
+(Defaults to \code{3}.)}
 
-\item{date.col}{Which column of MS.data indicates the laboratory measurment
-date (Defaults to "Date")}
+\item{INPUT.DIR}{(Character) Path to the directory where the input level-2 file exists. 
+If \code{NULL}, looking for the input level-2 file in the current working
+directory. (Defaults to \code{NULL}.)}
 
-\item{compound.col}{Which column of MS.data indicates the test compound
-(Defaults to "Compound.Name")}
-
-\item{area.col}{Which column of MS.data indicates the target analyte (that
-is, the test compound) MS peak area (Defaults to "Area")}
-
-\item{series.col}{Which column of MS.data indicates the "series", that is
-a simultaneous replicate (Defaults to "Series")}
-
-\item{type.col}{Which column of MS.data indicates the sample type (see table
-above)(Defaults to "Sample.Type")}
-
-\item{cal.col}{Which column of MS.data indicates the MS calibration -- for
-instance different machines on the same day or different days with the same
-MS analyzer (Defaults to "Cal")}
-
-\item{dilution.col}{Which column of MS.data indicates how many times the
-sample was diluted before MS analysis (Defaults to "Dilution.Factor")}
-
-\item{istd.col}{Which column of MS.data indicates the MS peak area for the
-internal standard (Defaults to "ISTD.Area")}
-
-\item{istd.name.col}{Which column of MS.data indicates identity of the
-internal standard (Defaults to "ISTD.Name")}
-
-\item{istd.conc.col}{Which column of MS.data indicates the concentration of
-the internal standard (Defaults to "ISTD.Conc")}
-
-\item{Test.Nominal.Conc.col}{Which column of MS.data indicates the intended
-test chemical concentration at time zero (Defaults to "Test.Target.Conc")}
+\item{OUTPUT.DIR}{(Character) Path to the directory to save the output file. 
+If \code{NULL}, the output file will be saved to the user's per-session temporary
+directory or \code{INPUT.DIR} if specified. (Defaults to \code{NULL}.)}
 }
 \value{
-A data.frame containing quunantiles of the Bayesian posteriors
+A list of two objects: 
+\enumerate{
+   \item{Results: A level-4 data frame with the Bayesian estimated fraction unbound in plasma (Fup) 
+   and credible interval for all compounds in the input file. Column includes:
+   Compound.Name - compound name, Lab.Compound.Name - compound name used by 
+   the laboratory, DTXSID - EPA's DSSTox Structure ID, Fup.point - point estimate of Fup,
+   Fup.Med - posterior median, Fup.Low - 2.5th quantile, and Fup.High - 97.5th quantile}
+   \item{coda: A runjags-class object containing results from JAGS model.}
+}
 }
 \description{
+This function estimates the fraction unbound in plasma (Fup) with Bayesian
+modeling on Rapid Equilibrium Dialysis (RED) data \insertCite{waters2008validation}{invitroTKstats}.
+Both Fup and the credible interval are estimated from posterior samples of the MCMC.
+A summary table (level-4) along with the full set of MCMC results is returned from
+the function.
+}
+\details{
+The input to this function should be "level-2" data. Level-2 data is level-1 data, formatted 
+with the \code{\link{format_fup_red}} function, and curated with a
+verification column. "Y" in the verification column indicates the data row is
+valid for analysis. 
+
+Note: By default, this function writes files to the user's per-session temporary directory.
+This temporary directory is a per-session directory whose path can be found with 
+the following code: \code{tempdir()}. For more details, see \url{https://www.collinberke.com/til/posts/2023-10-24-temp-directories/}.
+
+Users must specify an alternative path with the \code{TEMP.DIR} argument if they want 
+the intermediate files exported to another path. Exported intermediate files 
+include the summary results table (.tsv), JAGS model (.RData), and any "unverified" data 
+excluded from the analysis (.tsv). Users must specify an alternative path with 
+the \code{OUTPUT.DIR} argument if they want the final output file exported to 
+another path. The exported final output file is the summary results table (.RData). 
+
+As a best practice, \code{INPUT.DIR} (when importing a .tsv file) and/or \code{OUTPUT.DIR}
+should be specified to simplify the process of importing and exporting files. 
+This practice ensures that the exported files can easily be found and will not 
+be exported to a temporary directory.
+
 The data frame of observations should be annotated according to
 of these types:
 \tabular{rrrrr}{
@@ -93,26 +117,50 @@ of these types:
   Time zero chemical and plasma \tab T0\cr
   Equilibrium chemical in phosphate-buffered well (no plasma) \tab PBS\cr
   Equilibrium chemical in plasma well \tab Plasma\cr
+  Calibration Curve \tab CC\cr
 }
+We currently require Plasma, PBS, and Plasma.Blank data. T0, CC, and NoPlasma.Blank
+data are optional.
 }
 \examples{
-write.table(smeltz2023.red,
-  file="SmeltzPFAS-fup-RED-Level2.tsv",
-  sep="\t",
-  row.names=F,
-  quote=F)
+## Example 1: loading level-2 using data.in and export all files to the user's
+## temporary directory
+\dontrun{
+level2 <- invitroTKstats::fup_red_L2
 
+# JAGS.PATH should be changed to user's specific computer file path to JAGS software.
+# findJAGS() from runjags package is a handy function to find JAGS path automatically.
+# In certain circumstances or cases, one may need to provide the absolute path to JAGS.
+path.to.JAGS <- runjags::findJAGS()
+level4 <- calc_fup_red(FILENAME = "Example1",
+                       data.in = level2,
+                       NUM.CORES=2,
+                       JAGS.PATH=path.to.JAGS)
+}
 
-level3 <- calc_fup_red_point(FILENAME="SmeltzPFAS")
-level4 <- calc_fup_red(FILENAME="SmeltzPFAS",
-                       NUM.CORES=8,
-                       JAGS.PATH="C:/Users/jwambaug/AppData/Local/JAGS/JAGS-4.3.0/x64")
+## Example 2: importing level-2 from a .tsv file and export all files to same 
+## location as INPUT.DIR 
+\dontrun{
+# Refer to sample_verification help file for how to export level-2 data to a directory.
+# JAGS.PATH should be changed to user's specific computer file path to JAGS software.
+# findJAGS() from runjags package is a handy function to find JAGS path automatically.
+# In certain circumstances or cases, one may need to provide the absolute path to JAGS.
+# Will need to replace FILENAME and INPUT.DIR with name prefix and location of level-2 'tsv'.
+path.to.JAGS <- runjags::findJAGS()
+level4 <- calc_fup_red(# e.g. replace with "Examples" from "Examples-fup-RED-Level2.tsv"
+                       FILENAME="<level-2 FILENAME prefix>", 
+                       NUM.CORES=2,
+                       JAGS.PATH=path.to.JAGS,
+                       INPUT.DIR = "<level-2 FILE LOCATION>")
+}
 
 }
 \references{
 \insertRef{waters2008validation}{invitroTKstats}
 
 \insertRef{wambaugh2019assessing}{invitroTKstats}
+
+\insertRef{berg2011pathology}{invitroTKstats}
 }
 \author{
 John Wambaugh and Chantel Nicolas

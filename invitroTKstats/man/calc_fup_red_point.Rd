@@ -2,33 +2,70 @@
 % Please edit documentation in R/calc_fup_red_point.R
 \name{calc_fup_red_point}
 \alias{calc_fup_red_point}
-\title{Calculate a point estimate of Fraction Unbound in Plasma (RED)}
+\title{Calculate Point Estimates of Fraction Unbound in Plasma (Fup) with
+Rapid Equilibrium Dialysis (RED) Data (Level-3)}
 \usage{
-calc_fup_red_point(FILENAME, good.col = "Verified")
+calc_fup_red_point(
+  FILENAME,
+  data.in,
+  good.col = "Verified",
+  output.res = FALSE,
+  sig.figs = 3,
+  INPUT.DIR = NULL,
+  OUTPUT.DIR = NULL
+)
 }
 \arguments{
-\item{FILENAME}{A string used to identify the input file, whatever the
-argument given, "-fup-RED-Level2.tsv" is appended (defaults to "MYDATA")}
+\item{FILENAME}{(Character) A string used to identify the input level-2 file,
+"<FILENAME>-fup-RED-Level2.tsv" (if importing from a .tsv file), and/or used to
+identify the output level-3 file, "<FILENAME>-fup-RED-Level3.tsv" (if exporting).}
 
-\item{good.col}{Name of a column indicating which rows have been verified for
-analysis, indicated by a "Y" (Defaults to "Verified")}
+\item{data.in}{(Data Frame) A level-2 data frame generated from the 
+\code{format_fup_red} function with a verification column added by 
+\code{sample_verification}. Complement with manual verification if needed.}
+
+\item{good.col}{(Character) Column name indicating which rows have been
+verified, data rows valid for analysis are indicated with a "Y".
+(Defaults to "Verified".)}
+
+\item{output.res}{(Logical) When set to \code{TRUE}, the result 
+table (level-3) will be exported to the user's per-session temporary directory
+or \code{OUTPUT.DIR} (if specified) as a .tsv file. 
+(Defaults to \code{FALSE}.)}
+
+\item{sig.figs}{(Numeric) The number of significant figures to round the exported result table (level-3). 
+(Note: console print statements are also rounded to specified significant figures.)
+(Defaults to \code{3}.)}
+
+\item{INPUT.DIR}{(Character) Path to the directory where the input level-2 file exists. 
+If \code{NULL}, looking for the input level-2 file in the current working
+directory. (Defaults to \code{NULL}.)}
+
+\item{OUTPUT.DIR}{(Character) Path to the directory to save the output file. 
+If \code{NULL}, the output file will be saved to the user's per-session temporary
+directory or \code{INPUT.DIR} if specified. (Defaults to \code{NULL}.)}
 }
 \value{
-\item{data.frame}{A data.frame in standardized format}
+A level-3 data frame with one row per chemical, contains chemical identifiers 
+such as preferred compound name, EPA's DSSTox Structure ID, calibration details,
+and point estimates for the fraction unbound in plasma (Fup)
+for all chemicals in the input data frame.
 }
 \description{
-This function uses mass spectrometry (MS) peak areas
-from samples collected as part of in vitro measurement of chemical fraction
-unbound in plasma using rapid equilibrium dialysis
-\insertCite{waters2008validation}{invitroTKstats}.
-Data are read from a "Level2" text file that should have been formatted and created
-by \code{\link{format_fup_red}} (this is the "Level1" file). The Level1 file
-should have been curated and had a column added with the value "Y" indicating
-that each row is verified as usable for analysis (that is, the Level2 file).
+This function calculates the point estimates for the fraction unbound in plasma
+(Fup) using mass spectrometry (MS) peak areas from samples collected as part of
+\emph{in vitro} measurements of chemical Fup using rapid equilibrium dialysis
+\insertCite{waters2008validation}{invitroTKstats}. See the Details section
+for the equation(s) used in point estimation.
 }
 \details{
+The input to this function should be "level-2" data. Level-2 data is level-1,
+data formatted with the \code{\link{format_fup_red}} function, and curated
+with a verification column. "Y" in the verification column indicates the
+data row is valid for analysis. 
+
 The data frame of observations should be annotated according to
-of these types:
+these types:
 \tabular{rrrrr}{
   No Plasma Blank (no chemical, no plasma) \tab NoPlasma.Blank\cr
   Plasma Blank (no chemical, just plasma) \tab Plasma.Blank\cr
@@ -41,57 +78,59 @@ of these types:
 
 
 \eqn{f_{up} = \frac{\max\left( 0, \frac{\sum_{i=1}^{n_P} (r_P * c_{DF})}{n_P} - \frac{\sum_{i=1}^{n_{NPB}} (r_{NPB}*c_{DF})}{n_{NPB}}\right)}
-{\frac{\sum_{i=1}^{n_P} (r_P * c_{DF})}{n_P} - \frac{\sum_{i=1}^{n_B} (r_B * c_{DF})}{n_B}}}
+{\frac{\sum_{i=1}^{n_{PL}} (r_{PL} * c_{DF})}{n_{PL}} - \frac{\sum_{i=1}^{n_B} (r_B * c_{DF})}{n_B}}}
 
 where \eqn{r_P} is PBS Response, \eqn{n_P} is the number of PBS Responses,
-\eqn{c_{DF}} is Dilution Factor, \eqn{r_{NPB}} is No Plasma Blank Response,
-\eqn{n_{NPB}} is the number of No Plasma Blank Responses, \eqn{r_{B}} is Plasma Blank Response,
+\eqn{c_{DF}} is the corresponding Dilution Factor, \eqn{r_{NPB}} is No Plasma Blank Response,
+\eqn{n_{NPB}} is the number of No Plasma Blank Responses, \eqn{r_{PL}} is Plasma Response,
+\eqn{n_{PL}} is the number of Plasma Responses, \eqn{r_{B}} is Plasma Blank Response,
 and \eqn{n_B} is the number of Plasma Blank Responses.
+
+If the output level-3 result table is chosen to be exported and an output 
+directory is not specified, it will be exported to the user's R session
+temporary directory. This temporary directory is a per-session directory 
+whose path can be found with the following code: \code{tempdir()}. For more 
+details, see \url{https://www.collinberke.com/til/posts/2023-10-24-temp-directories/}.
+
+As a best practice, \code{INPUT.DIR} (when importing a .tsv file) and/or \code{OUTPUT.DIR} should be 
+specified to simplify the process of importing and exporting files. This 
+practice ensures that the exported files can easily be found and will not be 
+exported to a temporary directory.
 }
 \examples{
-red <- subset(wambaugh2019.red, Protein==100)
-red$Date <- "2019"
-red$Sample.Type <- "Blank"
-red <- subset(red,!is.na(SampleName))
-red[regexpr("PBS",red$SampleName)!=-1,"Sample.Type"] <- "PBS"
-red[regexpr("Plasma",red$SampleName)!=-1,"Sample.Type"] <- "Plasma"
-red$Dilution.Factor <- NA
-red$Dilution.Factor <- as.numeric(red$Dilution.Factor)
-red[red$Sample.Type=="PBS","Dilution.Factor"] <- 2
-red[red$Sample.Type=="Plasma","Dilution.Factor"] <- 5
-red[regexpr("T0",red$SampleName)!=-1,"Sample.Type"] <- "T0"
-red$Analysis.Method <- "LC or GC"
-red$Analysis.Instrument <- "No Idea"
-red$Analysis.Parameters <- "None"
+## Load example level-2 data
+level2 <- invitroTKstats::fup_red_L2
 
+## scenario 1: 
+## input level-2 data from the R session and do not export the result table
+level3 <- calc_fup_red_point(data.in = level2, output.res = FALSE)
 
-# Strip out protein conc information from compound names:
-red$CompoundName <- gsub("-100P","",red$CompoundName)
-red$CompoundName <- gsub("-30P","",red$CompoundName)
-red$CompoundName <- gsub("-10P","",red$CompoundName)
+## scenario 2: 
+## import level-2 data from a 'tsv' file and export the result table
+\dontrun{
+## Refer to sample_verification help file for how to export level-2 data to a directory.
+## Unless a different path is specified in OUTPUT.DIR,
+## the result table will be saved to the directory specified in INPUT.DIR.
+## Will need to replace FILENAME and INPUT.DIR with name prefix and location of level-2 'tsv'.
+level3 <- calc_fup_red_point(# e.g. replace with "Examples" from "Examples-fup-RED-Level2.tsv"
+                             FILENAME="<level-2 FILENAME prefix>",
+                             INPUT.DIR = "<level-2 FILE LOCATION>",
+                             output.res = TRUE)
+}
 
-red$Test.Target.Conc <- 5
-red$ISTD.Name <- "Bucetin and Diclofenac"
-red$ISTD.Conc <- 1
-red$Series <- 1
-
-level1 <- format_fup_red(red,
-  FILENAME="Wambaugh2019",
-  sample.col="SampleName",
-  compound.col="Preferred.Name",
-  lab.compound.col="CompoundName",
-  cal.col="RawDataSet")
-
-level2 <- level1
-level2$Verified <- "Y"
-
-write.table(level2,
-  file="Wambaugh2019-fup-RED-Level2.tsv",
-  sep="\t",
-  row.names=F,
-  quote=F)
-
-level3 <- calc_fup_red_point(FILENAME="Wambaugh2019")
+## scenario 3: 
+## import level-2 data from the R session and export the result table to the
+## user's temporary directory 
+## Will need to replace FILENAME with desired level-2 filename prefix. 
+\dontrun{
+level3 <- calc_fup_red_point(# e.g. replace with "MYDATA",
+                             FILENAME = "<desired level-2 FILENAME prefix>",
+                             data.in = level2,
+                             output.res = TRUE)
+# To delete, use the following code. For more details, see the link in the 
+file.remove(list.files(tempdir(), full.names = TRUE, 
+pattern = "<desired level-2 FILENAME prefix>-fup-RED-Level3.tsv"))  
+}
 
 }
 \references{

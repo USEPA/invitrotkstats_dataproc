@@ -1,16 +1,16 @@
-#' Merge multiple level0 files into a single table for processing
+#' Merge Multiple Level-0 files into a Single Table for Processing
 #'
 #' This function reads multiple Excel files containing mass-spectrometry (MS) data
 #' and extracts the chemical sample data from the specified
-#' sheets. The argument level0.catalog is a table that
+#' sheets. The argument `level0.catalog` is a table that
 #' provides the necessary information to find the data for each chemical. The
 #' primary data of interest are the analyte peak area, the internal standard
 #' peak area, and the target concentration for calibration curve (CC) samples.
-#' The argument data.label is used to annotate this particular mapping of level0
-#' files into data ready to be organized into a level1 file.
+#' The argument `data.label` is used to annotate this particular mapping of level-0
+#' files into data ready to be organized into a level-1 file.
 #'
 #' Unless specified to be a single value for all the files, for example sheet="Data",
-#' the argument level0.catalog should be a data frame with the following columns:
+#' the argument `level0.catalog` should be a data frame with the following columns:
 #' \tabular{rr}{
 #'   File \tab The Excel filename to be loaded\cr
 #'   Sheet \tab The name of the Sheet to examine within in the Excel file\cr
@@ -18,6 +18,7 @@
 #'   Date \tab The date the measurements were made\cr
 #'   Chemical.ID \tab The laboratory chemical identity\cr
 #'   ISTD \tab The internal standard used\cr
+#'   Col.Names.Loc \tab The row locations of the column names\cr
 #'   Sample.ColName \tab The column name on the sheet that contains sample identity\cr
 #'   Type.ColName \tab The column name on the sheet that contains the type of sample\cr
 #'   Peak.ColName \tab The column name on the sheet that contains the analyte MS peak area \cr
@@ -26,221 +27,210 @@
 #'   AnalysisParam.ColName \tab The column name on the sheet that contains the MS instrument parameters for the analyte\cr
 #' }
 #' Columns with names ending in ".ColName" indicate the columns to be extracted
-#' from the specified file and sheet.
+#' from the specified Excel file and sheet containing level-0 data.
+#' 
+#' If the output level-0 file is chosen to be exported and an output directory 
+#' is not specified, it will be exported to the user's R session temporary directory. 
+#' This temporary directory is a per-session directory whose path can be found with
+#' the following code: \code{tempdir()}. For more details, see 
+#' \url{https://www.collinberke.com/til/posts/2023-10-24-temp-directories/}.
+#' 
+#' As a best practice, \code{INPUT.DIR} (when importing a .tsv file) and/or 
+#' \code{OUTPUT.DIR} shoud be specified to simplify the process of importing and
+#' exporting files. This practice ensures that the exported files can easily be 
+#' found and will not be exported to a temporary directory. 
 #'
-#' @param data.label A string used to identify outputs of the function call.
-#' (defaults to "MYDATA")
+#' @param FILENAME (Character) A string used to identify outputs of the function call.
+#' (Default to "MYDATA")
 #' 
 #' @param level0.catalog A data frame describing which columns of which sheets
 #' in which Excel files contain MS data for analysis. See details for full
 #' explanation.
 #' 
-#' @param sample.col Which column of clint.data indicates the unique mass 
-#' spectrometry (MS) sample name used by the laboratory. (Defaults to 
-#' "Lab.Sample.Name")
+#' @param file.col (Character) Column name containing level-0 file names
+#' to pull data from.
 #' 
-#' @param lab.compound.col Which column of clint.data indicates The test compound 
-#' name used by the laboratory (Defaults to "Lab.Compound.Name")
+#' @param sheet (Character) Excel file sheet name/identifier containing
+#' level-0 where data is to be pulled from. (Defaults to `NULL`.) (Note: Single
+#' entry only, use only if all files have the same sheet identifier for
+#' level-0 data.) 
 #' 
-#' @param dtxsid.col Which column of clint.data indicates EPA's DSSTox Structure 
-#' ID (\url{http://comptox.epa.gov/dashboard}) (Defaults to "DTXSID")
+#' @param sheet.col (Character) Catalog column name containing `sheet`
+#' information. (Default to "Sheet")
 #' 
-#' @param date.col Which column of clint.data indicates the laboratory measurement
-#' date (Defaults to "Date")
+#' @param skip.rows (Numeric) Number of rows to skip when extracting level-0
+#' data from the specified Excel file(s). (Defaults to `NULL`.) (Note: Single
+#' entry only, use only if all files need to skip the same number of rows
+#' for extracting level-0 data.)
 #' 
-#' @param compound.col Which column of clint.data indicates the test compound
-#' (Defaults to "Compound.Name")
+#' @param skip.rows.col (Character) Catalog column name containing `skip.rows`
+#' information. (Default to "Skip.Rows")
 #' 
-#' @param area.col Which column of clint.data indicates the target analyte (that 
-#' is, the test compound) MS peak area (Defaults to "Area")
+#' @param num.rows (Numeric) Number of rows to pull when extracting level-0
+#' data from the specified Excel file(s). (Defaults to `NULL`.) (Note: Single
+#' entry only, use only if all files need to pull the same number of rows for
+#' extracting level-0 data.)
 #' 
-#' @param series.col Which column of clint.data indicates the "series", that is
-#' a simultaneous replicate (Defaults to "Series")
+#' @param num.rows.col (Character) Catalog column name containing `num.rows`
+#' information. (Default to `NULL`)
 #' 
-#' @param type.col Which column of clint.data indicates the sample type (see table
-#' above)(Defaults to "Sample.Type")
+#' @param date (Character) Date of laboratory measurements. Typical format
+#' "MMDDYY" ("MM" = 2 digit month, "DD" = 2 digit day, and "YY" = 2 digit year).
+#' (Defaults to `NULL`.) (Note: Single entry only, use only if all files have
+#' the same laboratory measurement date.)
 #' 
-#' @param cal.col Which column of clint.data indicates the MS calibration -- for
-#' instance different machines on the same day or different days with the same
-#' MS analyzer (Defaults to "Cal")
+#' @param date.col (Character) Catalog column name containing `date`
+#' information. (Defaults to "Date")
 #' 
-#' @param dilution.col Which column of clint.data indicates how many times the
-#' sample was diluted before MS analysis (Defaults to "Dilution.Factor")
-#'
-#' @param density.col Which column of clint.data indicates the density (units of
-#' millions of hepatocytes per mL) hepatocytes in the in vitro incubation 
-#' (Defaults to "Hep.Density" )
+#' @param compound.col (Character) Catalog column name containing `compound` 
+#' information. (Defaults to "Chemical.ID")
 #' 
-#' @param istd.col Which column of clint.data indicates the MS peak area for the
-#' internal standard (Defaults to "ISTD.Area")
+#' @param istd.col (Character) Catalog column name containing `istd` information,
+#' or the MS peak area for the internal standard. (Defaults to "ISTD") 
 #' 
-#' @param istd.name.col Which column of clint.data indicates identity of the 
-#' internal standard (Defaults to "ISTD.Name")
+#' @param col.names.loc (Numeric) Row location of data column names. (Defaults to 
+#' 'NULL'.) (Note: Single entry only, use only if all files have column names 
+#' in the same row location, typically the first row.)
 #' 
-#' @param istd.conc.col Which column of clint.data indicates the concentration 
-#' (units if uM) of
-#' the internal standard (Defaults to "ISTD.Conc")
+#' @param col.names.loc.col (Character) Catalog column name containing `col.names.loc`
+#' information. (Defaults to "Col.Names.Loc")
 #' 
-#' @param conc.col Which column of clint.data indicates the intended
-#' test chemical concentration 
-#' (units if uM) of
-#' at time zero (Defaults to "Conc") 
-#'
-#' @param time.col Which column of clint.data indicates the intended
-#' time of the measurement (in minutes) since the test chemical was introduced
-#' into the hepatocyte incubation (Defaults to "Time") 
-#'
-#' @param analysis.method.col Which column of PPB.data indicates the analytical
-#' chemistry analysis method, typically "LCMS" or "GCMS" (Defaults to 
-#' "Analysis.Method")
-#'
-#' @param analysis.instrument.col Which column of PPB.data indicates the 
-#' instrument used for chemical analysis, for example 
-#' "Agilent 6890 GC with model 5973 MS" (Defaults to 
-#' "Analysis.Instrument")
-#'
-#' @param analysis.parameters.col Which column of PPB.data indicates the 
-#' parameters used to identify the compound on the chemical analysis instrument,
-#' for example 
-#' "Negative Mode, 221.6/161.6, -DPb=26, FPc=-200, EPd=-10, CEe=-20, CXPf=-25.0"
-#' (Defaulys to "Analysis.Parameters"). 
-#'
-#' @param FILENAME A string used to identify outputs of the function call.
-#' (defaults to "MYDATA")
+#' @param sample.colname (Character) Column name of level-0 data containing
+#' sample information. (Defaults to `NULL`.) (Note: Single entry only, use only
+#' if all files use the same column name for sample names when extracting
+#' level-0 data.)
 #' 
-#' @param input.data A data frame containing mass-spectrometry peak areas,
-#' indication of chemical identity, and measurement type. The data frame should
-#' contain columns with names specified by the following arguments:
+#' @param sample.colname.col (Character) Catalog column name containing 
+#' `sample.colname` information. (Defaults to "Sample.ColName") 
 #' 
-#' @param sample.col Which column of input.data indicates the unique mass 
-#' spectrometry (MS) sample name used by the laboratory. (Defaults to 
-#' "Lab.Sample.Name")
+#' @param type.colname (Character) Column name of the level-0 data containing
+#'  the type of sample. (Defaults to `NULL`.) (Note: Single entry only, use
+#'  only if all files use the same column name for sample type information
+#'  when extracting level-0 data.)
 #' 
-#' @param density.col Which column of input.data indicates the density of 
-#' hepatocytes in suspension (10^6 hepatocytes / mL) (Defaults to "Hep.Density")
+#' @param type.colname.col (Character) Catalog column name containing
+#' `type.colname` information. (Defaults to "Type".)
 #' 
-#' @param density.col A single value to be used for all samples indicating
-#' the density of hepatocytes in suspension (10^6 hepatocytes / mL) 
-#' (Defaults to NULL)
+#' @param peak.colname (Character) Column name of the level-0 data containing
+#'  the analyte Mass Spectrometry peak area. (Defaults to `NULL`.)
+#'  (Note: Single entry only, use only if all files use the same column name
+#'  for analyte peak area information when extracting level-0 data.)
 #' 
-#' @param lab.compound.col Which column of input.data indicates The test compound 
-#' name used by the laboratory (Defaults to "Lab.Compound.Name")
+#' @param peak.colname.col (Character) Catalog column name containing
+#' `peak.colname` information. (Defaults to "Peak.ColName")
 #' 
-#' @param dtxsid.col Which column of input.data indicates EPA's DSSTox Structure 
-#' ID (\url{http://comptox.epa.gov/dashboard}) (Defaults to "DTXSID")
+#' @param istd.peak.colname (Character) Column name of the level-0 data
+#'  containing the internal standard Mass Spectrometry peak area. (Note: Single
+#'  entry only, use only if all files use the same column name for internal
+#'  standard MS peak area information when extracting level-0 data.)
 #' 
-#' @param date.col Which column of input.data indicates the laboratory measurement
-#' date (Defaults to "Date")
+#' @param istd.peak.colname.col (Character) Catalog column name containing
+#' `istd.peak.colname` information. (Defaults to "ISTD.Peak.ColName")
 #' 
-#' @param series.col Which column of PPB.data indicates the "series", that is
-#' a simultaneous replicate with the same analytical chemistry 
-#' (Defaults to "Series")
-#' 
-#' @param series If this argument is used (defaults to NULL) every observation 
-#' in the table is assigned the value of the argument and the corresponding
-#' column in input.table (if present) is ignored.
-#' 
-#' @param compound.col Which column of input.data indicates the test compound
-#' (Defaults to "Compound.Name")
-#' 
-#' @param area.col Which column of input.data indicates the target analyte (that 
-#' is, the test compound) MS peak area (Defaults to "Area")
-#' 
-#' @param type.col Which column of input.data indicates the sample type (see table
-#' above)(Defaults to "Type")
-#' 
-#' @param type.col Which column of input.data indicates the direction of the 
-#' measurements (either "AtoB" for apical to basolateral or "BtoA" for vice 
-#' versa) (Defaults to "Direction")
-#' 
-#' @param cal.col Which column of input.data indicates the MS calibration -- for
-#' instance different machines on the same day or different days with the same
-#' MS analyzer (Defaults to "Cal")
-#' 
-#' @param cal If this argument is used (defaults to NULL) every observation in
-#' the table is assigned the value of the argument and the corresponding
-#' column in input.table (if present) is ignored.
-#' 
-#' #param compound.conc.col Which column indicates the intended concentration 
-#' of the test chemical for calibration curves (Defaults to "Standard.Conc")
-#'
-#' @param dilution If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#' 
-#' 
-#' @param istd.col Which column of input.data indicates the MS peak area for the
-#' internal standard (Defaults to "ISTD.Area")
-#' 
-#' @param istd.name.col Which column of input.data indicates identity of the 
-#' internal standard (Defaults to "ISTD.Name")
-#' 
-#' @param istd.name If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#' 
-#' @param istd.conc.col Which column of input.data indicates the concentration of
-#' the internal standard (Defaults to "ISTD.Conc")
-#' 
-#' @param istd.conc If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#' 
-#' @param nominal.test.conc.col Which column of input.data indicates the intended
-#' test chemical concentration at time zero in the dosing solution (added to the
-#' donor side of the Caco-2 test well) (Defaults to "Test.Target.Conc") 
-#' 
-#' @param nominal.test.conc If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#'
-#' @param analysis.method.col Which column of input.data indicates the analytical
-#' chemistry analysis method, typically "LCMS" or "GCMS" (Defaults to 
-#' "Analysis.Method")
-#' 
-#' @param analysis.method If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#'
-#' @param analysis.instrument.col Which column of input.data indicates the 
-#' instrument used for chemical analysis, for example 
-#' "Agilent 6890 GC with model 5973 MS" (Defaults to 
-#' "Analysis.Instrument")
-#' 
-#' @param analysis.instrument If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#'
-#' @param analysis.parameters.col Which column of input.data indicates the 
-#' parameters used to identify the compound on the chemical analysis instrument,
-#' for example 
-#' "Negative Mode, 221.6/161.6, -DPb=26, FPc=-200, EPd=-10, CEe=-20, CXPf=-25.0"
-#' (Defaults to "Analysis.Parameters"). 
-#' 
-#' @param analysis.parameters If this argument is used (defaults to NULL) every 
-#' observation in the table is assigned the value of the argument and the 
-#' corresponding column in input.table (if present) is ignored.
-#'
-#' @param level0.file.col Which column of PPB.data indicates the file from
-#' which the data were obtained (for example "MyWorkbook.xlsx").
+#' @param conc.colname (Character) Column name of the level-0 data containing
+#'  intended concentrations for calibration curves. (Defaults to `NULL`.)
+#'  (Note: Single entry only, use only if all files use the same column name
+#'  for intended concentration information when extracting level-0 data.)
 #'  
-#' @param level0.file If this argument is used (defaults to NULL) every
-#' observation in the table is assigned the value of the argument and the
-#' corresponding column in input.table (if present) is ignored.
+#' @param conc.colname.col (Character) Catalog column name containing 
+#' `conc.colname` information. (Defaults to "Conc.ColName")
 #' 
-#' @param level0.sheet.col Which column of PPB.data indicates the specific 
-#' sheet containing the data if the file is an Excel workbook
+#' @param analysis.param.colname (Character) Column name of the level-0 data
+#'  containing Mass Spectrometry instrument parameters for the analyte.
+#'  (Defaults to `NULL`.) (Note: Single entry only, use only if all files use
+#'  the same column name for analysis parameter information when extracting
+#'  level-0 data.)
+#' 
+#' @param analysis.param.colname.col (Character) Catalog column name containing
+#' `analysis.param.colname` information. (Defaults to "AnalysisParam.ColName")
+#' 
+#' @param additional.colnames Additional columns from the level-0 data files to
+#'  pull information from when extracting level-0 data and include in the
+#'  compiled level-0 returned from `merge_level0`. (Defaults to `NULL`.)
+#' 
+#' @param additional.colname.cols Catalog column name(s) containing 
+#'  `additional.colnames` information, (Defaults to `NULL`.)
+#' 
+#' @param chem.ids (Data frame) A data frame containing basic chemical
+#'  identification information for tested chemicals.
+#' 
+#' @param chem.lab.id.col (Character) Column in `chem.ids` containing
+#'  the compound/chemical identifier used by the laboratory in level-0 measured
+#'  data. (Defaults to "Chem.Lab.ID")
+#' 
+#' @param chem.name.col (Character) `chem.ids` column name containing the
+#'  "standard" chemical name to use for annotation of the compiled level-0
+#'  returned from `merge_level0`. (Defaults to "Compound")
+#' 
+#' @param chem.dtxsid.col (Character) `chem.ids` column name containing EPA's
+#'  DSSTox Structure ID (\url{http://comptox.epa.gov/dashboard})
+#'  (Defaults to "DTXSID") 
 #'  
-#' @param level0.sheet If this argument is used (defaults to NULL) every
-#' observation in the table is assigned the value of the argument and the
-#' corresponding column in input.table (if present) is ignored.
+#' @param catalog.out (Logical) When set to \code{TRUE}, the data frame 
+#' specified in \code{level0.catalog} will be exported to the user's per-session 
+#' temporary directory or \code{OUTPUT.DIR} (if specified) as a .tsv file.
+#' (Defaults to \code{FALSE}.)
 #' 
-#' @return \item{data.frame}{A data.frame in standardized "level1" format} 
+#' @param output.res (Logical) When set to \code{TRUE}, the result 
+#' table (level-0) will be exported to the user's per-session temporary directory
+#' or \code{OUTPUT.DIR} (if specified) as a .tsv file. (Defaults to \code{FALSE}.)
+#' 
+#' @param INPUT.DIR (Character) Path to the directory where the Excel files 
+#' with level-0 data exist. If not specified, looking for the files
+#' in the current working directory. (Defaults to \code{NULL}.)
+#' 
+#' @param OUTPUT.DIR (Character) Path to the directory to save the output file. 
+#' If \code{NULL}, the output file will be saved to the user's per-session temporary
+#' directory. (Defaults to \code{NULL}.)
+#' 
+#' @return \item{data.frame}{A data.frame in standardized level-0 format} 
 #'
 #' @author John Wambaugh
 #' 
+#' @examples
+#' 
+#' \dontrun{
+#' # Create level0.catalog data.frame
+#' # Will need to retrieve "Hep_745_949_959_082421_final.xlsx" file from 
+#' inst/extdata/Kreutz-Clint and save it to desired directory.
+#' # Note XLSX file does not need to be saved to current working directory. 
+#' catalog <- create_catalog(file = "Hep_745_949_959_082421_final.xlsx",
+#'                           sheet = "Data063021",
+#'                           skip.rows = 44,
+#'                           num.rows = 30,
+#'                           date = "063021",
+#'                           compound = "745",
+#'                           istd = "MFBET",
+#'                           sample = "Name",
+#'                           type = "Type",
+#'                           peak = "Area...13",
+#'                           istd.peak = "Resp....16",
+#'                           conc = "Final Conc....11",
+#'                           analysis.param = "Exp. Conc....10",
+#'                           col.names.loc = 2)
+#' # Create chem.ids data.frame
+#' chem.ids <- data.frame("Chem.Lab.ID" = "745",
+#'                        "Compound" = "(Heptafluorobutanoyl)pivaloylmethane",
+#'                        "DTXSID" = "DTXSID3066215")
+#' # Create level0 data.frame       
+#' # Will need to replace <PATH TO FILE> with chosen desired directory containing
+#' # XLSX file from above.                  
+#' level0 <- merge_level0(level0.catalog = catalog,
+#'              INPUT.DIR = "<PATH TO FILE>",
+#'              istd.col = "ISTD.Name",
+#'              type.colname.col = "Type.ColName",
+#'              num.rows.col = "Number.Data.Rows",
+#'              chem.ids = chem.ids,
+#'              catalog.out = FALSE,
+#'              output.res = FALSE)
+#' }
+#' 
+#' @import readxl
+#' @importFrom methods is 
+#' @importFrom utils head
+#' 
 #' @export merge_level0
-merge_level0 <- function(data.label="MYDATA",
+merge_level0 <- function(FILENAME="MYDATA",
   level0.catalog,
   file.col="File",
   sheet=NULL,
@@ -253,6 +243,8 @@ merge_level0 <- function(data.label="MYDATA",
   date.col="Date",
   compound.col="Chemical.ID",
   istd.col="ISTD",
+  col.names.loc=NULL,
+  col.names.loc.col="Col.Names.Loc",
   sample.colname=NULL,
   sample.colname.col="Sample.ColName",
   type.colname=NULL,
@@ -270,11 +262,15 @@ merge_level0 <- function(data.label="MYDATA",
   chem.ids,
   chem.lab.id.col="Chem.Lab.ID",
   chem.name.col="Compound",
-  chem.dtxsid.col="DTXSID"
+  chem.dtxsid.col="DTXSID",
+  catalog.out = FALSE,
+  output.res = FALSE,
+  INPUT.DIR = NULL,
+  OUTPUT.DIR = NULL
   )
 {
-  # Eliminate duplicat rows from chem.ids:
-  chem.ids <- subset(chem.ids, !duplicated(chem.ids))
+  #assigning global variables
+  std.conc <- NULL
   
   level0.catalog <- as.data.frame(level0.catalog)
   
@@ -284,6 +280,7 @@ merge_level0 <- function(data.label="MYDATA",
   if (!is.null(skip.rows)) level0.catalog[,skip.rows.col] <- skip.rows
   if (!is.null(num.rows)) level0.catalog[,num.rows.col] <- num.rows
   if (!is.null(date)) level0.catalog[,date.col] <- date
+  if (!is.null(col.names.loc)) level0.catalog[,col.names.loc.col] <- col.names.loc
   if (!is.null(sample.colname)) level0.catalog[,sample.colname.col] <- 
     sample.colname
   if (!is.null(type.colname)) level0.catalog[,type.colname.col] <- 
@@ -305,6 +302,7 @@ merge_level0 <- function(data.label="MYDATA",
     date.col,
     compound.col,
     istd.col,
+    col.names.loc.col,
     sample.colname.col,
     type.colname.col,
     peak.colname.col,
@@ -334,6 +332,7 @@ merge_level0 <- function(data.label="MYDATA",
   date.col <- "Date"
   compound.col <- "Chemical.ID"
   istd.col <- "ISTD.Name"
+  col.names.loc.col <- "Col.Names.Loc"
   sample.colname.col <- "Sample.ColName"
   type.colname.col <- "Type.ColName"
   peak.colname.col <- "Peak.ColName"
@@ -348,6 +347,7 @@ merge_level0 <- function(data.label="MYDATA",
     date.col,
     compound.col,
     istd.col,
+    col.names.loc.col,
     sample.colname.col,
     type.colname.col,
     peak.colname.col,
@@ -364,6 +364,7 @@ merge_level0 <- function(data.label="MYDATA",
   colnames(level0.catalog) <- std.colnames
 
   out.data <- NULL
+  if (is.null(INPUT.DIR)) INPUT.DIR <- getwd()
   for (this.row in 1:dim(level0.catalog)[1])
   {
     this.file <- as.character(level0.catalog[this.row,"File"])
@@ -371,24 +372,53 @@ merge_level0 <- function(data.label="MYDATA",
     this.skip <- as.numeric(level0.catalog[this.row, "Skip.Rows"]) 
     this.date <- as.character(level0.catalog[this.row, "Date"])
     this.chem <- as.character(level0.catalog[this.row, "Chemical.ID"])
-    if (!(this.chem %in% chem.ids[,chem.lab.id.col]))
+    # Compound may have multiple lab compound names
+    chem.lab.id.names <- strsplit(chem.ids[,chem.lab.id.col], ", ")
+    b <- unlist(lapply(chem.lab.id.names, function(X) {this.chem %in% X}))
+    if (!(any(b)))
     {
       stop(paste0("Chem ID ",this.chem," not found in table chem.ids column ",
                   chem.lab.id.col))
     } else {
-      id.index <- which(chem.ids[, chem.lab.id.col]==this.chem)[1]
+      id.index <- which(b)
       this.name <- chem.ids[id.index, chem.name.col]
       this.dtxsid <- chem.ids[id.index, chem.dtxsid.col]
     }
     this.istd <- as.character(level0.catalog[this.row, "ISTD.Name"])
+    this.col.name.loc <- as.numeric(level0.catalog[this.row, "Col.Names.Loc"])
     this.sample.name.col <- as.character(level0.catalog[this.row, "Sample.ColName"])
     this.peak.col <- as.character(level0.catalog[this.row, "Peak.ColName"])
     this.istd.peak.col <- as.character(level0.catalog[this.row, "ISTD.Peak.ColName"])
     this.conc.col <- as.character(level0.catalog[this.row, "Conc.ColName"])
     this.type.col <- as.character(level0.catalog[this.row, "Type.ColName"])
     this.analysis.param.col <- as.character(level0.catalog[this.row, "AnalysisParam.ColName"])
+    
+    
+# Read the header row: 
+    this.header.row <- names(read_excel(paste0(INPUT.DIR,"/",this.file), sheet=this.sheet, range = cell_limits(c(this.col.name.loc,1),c(this.col.name.loc,NA))))
+
+    # Check header row has all required columns 
+    required.col.names <- c(this.sample.name.col, this.peak.col, this.istd.peak.col, this.conc.col, this.type.col, this.analysis.param.col)
+    if (!(all(required.col.names %in% this.header.row))) {
+      stop(paste("Columns not found in selected header row:",
+                 paste(required.col.names[!(required.col.names %in% this.header.row)], collapse=", ")))
+    }
+    # Check header row has all additional columns 
+    if (!is.null(additional.colname.cols))
+    {
+      # Required additional columns 
+      required.col.names <- NULL
+      for (this.col in additional.colname.cols){
+        required.col.names <- c(required.col.names, as.character(level0.catalog[this.row, this.col]))
+      }
+      if (!(all(required.col.names %in% this.header.row))){
+        stop(paste("Columns not found in selected header row:",
+                   paste(required.col.names[!(required.col.names %in% this.header.row)], collapse = ", ")))
+      }
+    }
+
 # Read the data:
-    this.data <- as.data.frame(read_excel(this.file, sheet=this.sheet, skip=this.skip))
+    this.data <- as.data.frame(read_excel(paste0(INPUT.DIR,"/",this.file), sheet=this.sheet, range = cell_limits(c(this.skip+1,1),c(NA,length(this.header.row))), col_names = this.header.row))
 # Trim the data if num.rows.col specified:
     if (!is.null(num.rows.col))
     {
@@ -432,7 +462,7 @@ merge_level0 <- function(data.label="MYDATA",
       print(paste("Columns needed:",paste(needed.columns,collapse=", ")))
       print(head(this.data))
       print(paste0("Missing columns: ",paste(needed.columns[!(needed.columns %in% colnames(this.data))],collapse=", ")))
-      browser()
+      # browser()
     }
     this.data <- reordered.data
     
@@ -459,13 +489,36 @@ merge_level0 <- function(data.label="MYDATA",
     out.data <- rbind(out.data, this.data[,1:(13+length(additional.colname.cols))])  
   }
 
-# Write out a "Catalog" file that explains how level 0 data were mapped to level 1
-  write.table(level0.catalog, 
-    file=paste(data.label,"-level0-Catalog.tsv",sep=""),
-    sep="\t",
-    row.names=F,
-    quote=F)
+  
+  if (!is.null(OUTPUT.DIR)) {
+    file.path <- OUTPUT.DIR
+  } else {
+    file.path <- tempdir()
+  }
 
+  ## Keep outputting level-0 catalog for now but this functionality may be deprecated later
+  if (catalog.out) {
+    # Write out a "Catalog" file that explains how level-0 data were mapped to level-1
+    write.table(level0.catalog, 
+                file=paste0(file.path, "/", FILENAME,"-level0-Catalog.tsv"),
+                sep="\t",
+                row.names=F,
+                quote=F)
+    cat(paste0("A level-0 Catalog file named ",FILENAME,"-level0-Catalog.tsv", 
+                " has been exported to the following directory: ", file.path),"\n")
+  }
+
+  if (output.res) {
+    # Write out the merged level-0 file
+    write.table(out.data, 
+                file=paste0(file.path, "/", FILENAME,"-level0.tsv"),
+                sep="\t",
+                row.names=F,
+                quote=F)
+    cat(paste0("A level-0 file named ",FILENAME,"-level0.tsv", 
+                " has been exported to the following directory: ", file.path), "\n")
+  }
+ 
   return(out.data)  
 }
 

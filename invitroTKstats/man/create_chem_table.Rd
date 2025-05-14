@@ -2,7 +2,7 @@
 % Please edit documentation in R/create_chem_table.R
 \name{create_chem_table}
 \alias{create_chem_table}
-\title{Creates a standardized data table of chemical identities}
+\title{Creates a Standardized Data Table of Chemical Identities}
 \usage{
 create_chem_table(
   input.table,
@@ -12,44 +12,65 @@ create_chem_table(
 )
 }
 \arguments{
-\item{input.table}{A data frame containing mass-spectrometry peak areas,
+\item{input.table}{(Data Frame) A data frame containing mass-spectrometry peak areas,
 indication of chemical identity, and analytical chemistry methods.
 It should contain columns with names specified by the following arguments:}
 
-\item{dtxsid.col}{Which column of input.table indicates EPA's DSSTox Structure 
-ID (\url{http://comptox.epa.gov/dashboard}) (Defaults to "DTXSID")}
+\item{dtxsid.col}{(Character) Column name of \code{input.table} containing
+EPA's DSSTox Structure ID (\url{http://comptox.epa.gov/dashboard}).
+(Defaults to "DTXSID".)}
 
-\item{compound.col}{Which column of input.table indicates the test compound
-(Defaults to "Compound.Name")}
+\item{compound.col}{(Character) Column name of \code{input.table} containing
+the test compound. (Defaults to "Compound.Name".)}
 
-\item{lab.compound.col}{Which column of PPB.data indicates The test compound 
-name used by the laboratory (Defaults to "Lab.Compound.Name")}
+\item{lab.compound.col}{(Character) Column name of \code{input.table} containing the test compound 
+name used by the laboratory. (Defaults to "Lab.Compound.Name".)}
 }
 \value{
-A data.frame with one row per method
+A data frame containing the chemical identifiers for all unique
+chemicals in the input data frame. Each row maps a unique chemical,
+indicated by the DTXSID, to all the preferred compound names
+and all chemical names used by the laboratory referenced in the input data frame.
 }
 \description{
-This function extracts the chemical analysis methods from a set of MS data.
+This function creates a data frame summarizing chemical identifiers used for 
+each tested chemical in MS data. Each row in the resulting data frame provides 
+EPA's DSSTox Structure ID (DTXSID), preferred compound name, and the name used 
+by the laboratory.
 }
 \examples{
 
 library(invitroTKstats)
-
 # Smeltz et al. (2020) data:
-create_chem_table(smeltz2020)
-
-# Kreutz et al. (2020) data:
-create_chem_table(kreutz2020,compound.col="Name")
-
-# Wambaugh et al. (2019) data:
-# Strip out protein conc information from compound names:
-wambaugh2019.red$CompoundName <- gsub("-100P","",wambaugh2019.red$CompoundName)
-wambaugh2019.red$CompoundName <- gsub("-30P","",wambaugh2019.red$CompoundName)
-wambaugh2019.red$CompoundName <- gsub("-10P","",wambaugh2019.red$CompoundName)
-
-wambaugh2019.redchems <- create_chem_table(wambaugh2019.red,
-   compound.col="Preferred.Name",
-   lab.compound.col="CompoundName")
+##  Clint ##
+create_chem_table(
+  input.table = invitroTKstats::clint_cheminfo,
+  dtxsid.col = "DTXSID",
+  compound.col = "Compound",
+  lab.compound.col = "Chem.Lab.ID"
+  )
+## Fup RED ##
+create_chem_table(
+  input.table = invitroTKstats::fup_red_cheminfo,
+  dtxsid.col = "DTXSID",
+  compound.col = "Compound",
+  lab.compound.col = "Chem.Lab.ID"
+  )
+## Fup UC ##
+create_chem_table(
+  input.table = invitroTKstats::fup_uc_cheminfo,
+  dtxsid.col = "DTXSID",
+  compound.col = "Compound",
+  lab.compound.col = "Chem.Lab.ID"
+  )
+# Honda et al. () data:
+## Caco2 ##
+create_chem_table(
+  input.table = invitroTKstats::caco2_cheminfo,
+  dtxsid.col = "DTXSID",
+  compound.col = "PREFERRED_NAME",
+  lab.compound.col = "test_article"
+  )
 
 }
 \author{
