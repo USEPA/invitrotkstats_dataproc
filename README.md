@@ -1,92 +1,57 @@
-# R Package "invitroTKstats"
+# Data Processing with "invitroTKstats"
 
-Standardized pipeline for processing high-throughput toxicokinetic (HTTK) data from *in vitro* assays.  The pipeline includes standardization for data documentation, statistical analyses predicting toxicokinetics parameters that characterize absorption, distribution, metabolism, and elimination of chemicals by the body.
+This repository contains the raw data and data processing scripts/rmarkdown files used to pipeline high-throughput toxicokinetic (HTTK) data from *in vitro* assays run for particular studies using the `invitroTKstats` R package.
 
-The assays covered by the pipeline include intrinsic clearance after hepatocyte incubation ($Cl_{int}$); three variants of plasma protein binding experiments, CACO-2 membrane permeability, and blood to plasma concentration ratio. Analysis methods include frequentist point estimates and, in some cases, Bayesian methods for identifying distributions of likely parameter values. Analysis is based on mass spectrometry ratios of analyte peak areas to internal standard peak areas. Data are formatted to anticipate databases storage.
+## Background on "invitroTKstats" R package
 
-## Background
+The `invitroTKstats` pipeline includes standardization for data documentation, statistical analyses predicting toxicokinetics parameters characterizing absorption, distribution, metabolism, and elimination of chemicals by the body.
 
-## Getting Started
+The assays covered by the pipeline include intrinsic clearance after hepatocyte incubation ($Cl_{int}$); two variants of plasma protein binding experiments, and CACO-2 membrane permeability. Analysis methods include frequentist point estimates and, in some cases, Bayesian methods to estimate a distributions of likely parameter values. Data for these analyses consist of ratios between peak areas of an analyte and the related internal standard compound measured with mass spectrometry. Standardized data formatting is meant to anticipate potential databases storage in future developments.
 
-### Dependencies
+## Organization of Files
 
-* Users will need the freely available R statistical computing language: <https://www.r-project.org/>
-* Users will need the freely available "Just Another Gibbs Sampler" (JAGS):
-<https://mcmc-jags.sourceforge.io/>
-* Users will need to have the following package installed in addition to
-`invitroTKstats`:
-  * `ggplot2`
-  * `parallel`
-  * `runjags`
-  * `stats4`
-* Users will likely want a development environment like RStudio: <https://www.rstudio.com/products/rstudio/download/>
+* **final_RData**: Contains a collection of R data files (extension ".RData") which are the final result from processing the raw mass-spectrometry data with the `invitroTKstats` pipeline.
 
-### Installing
+* **working**: Contains a set of directories with raw data files from the wet-lab (internal or contracted) and scripts/rmarkdown files necessary to pipeline data to generate the final dataset related to a particular study/manuscript.
 
-Getting Started with R Package `invitroTKstats`.
+  * **CrizerPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Crizer et al. (2024)](https://doi.org/10.3390/toxics12090672).
+  * **KreutzPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Kreutz et al. (2023)](https://doi.org/10.3390/toxics11050463).
+  * **SmeltzPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Smeltz et al. (2023)](https://doi.org/10.1021/acs.chemrestox.3c00003).
+  * **old_vignettes**: This sub-directory contains R markdown files, previously utilized as vignettes in prototype versions of the `invitroTKstats` R package, but are related to data pipelining data for published manuscripts. (Old vignettes were moved to the working directory on 02/12/2025.)
+  * **Wambaugh2019_regen-2023**: This sub-directory contains an R script and updated set of generated data files from a more recent version of `invitroTKstats` (i.e. 2023) from the original data generation/pipelining done for [Wambaugh et al. (2019)](https://doi.org/10.1093/toxsci/kfz205).
 
-* Installing directly from the GitHub repo from the R console
+## Getting Started with Pipelining
 
-```
-devtools::install_git(
-  "https://github.com/jfwambaugh/invitroTKstats.git",
-  subdir = "invitroTKstats",
-  ref = "main"
-)
-```
+Individuals that want to replicate these analyses or perform their own data processing should first install the `invitroTKstats` R package, along with any required dependencies (see [invitroTKstats GitHub](https://github.com/USEPA/invitroTKstats) for further details).
 
-* Installing a local clone of the GitHub repo.
-  
-  1. Go to the GitHub repo for
-  [`invitroTKstats`](https://github.com/jfwambaugh/invitroTKstats)
-  2. Choose the "Code" button and copy the repo URL.
-  3. In your local command line terminal, navigate to the directory location you wish to store your local copy of the repo.
-  4. In your terminal type `git clone <https://github.com/jfwambaugh/invitroTKstats>`
-  4. After cloning completes then open an R session.
-  5. In the R console use the following commands.
-  
-```
-devtools::install_local(
-  "<file_path_to_invitroTKstats_repo>/invitroTKstats"
-)
-```
+*It should be noted that the datasets generated in this repo, and their related scripts, may be generated using an earlier prototype version of the `invitroTKstats` R package.  Thus, one may need to amend the current scripts and/or install previous versions of the package.*
 
-* Installation may also be done via the RStudio provided ‘Install Packages’ menu
-under the ‘Tools’ tab.
-
-## Loading the Package
-
-To load the `invitroTKstats` data and functions into your local R session in
-the R console.
+Once `invitroTKstats` is installed the package can be loaded into your local R session by using the following code in the R console.
 
 ```
 library(invitroTKstats)
 ```
 
-Check the package version installed and in use 
+Check the package version installed and in use with:
 
 ```
 packageVersion(invitroTKstats)
 ```
 
-## Authors
+## Contributors
 
-John Wambaugh [wambaugh.john@epa.gov] - Package Creator 
+John Wambaugh [wambaugh.john@epa.gov] (Conceptualization, Data Processing, & Subject Matter Expert)
 
-Sarah Davidson-Fritz [davidsonfritz.sarah@epa.gov] - Lead Package Developer
+Barbara Wetmore [wetmore.barbara@epa.gov] (Raw Data Generation & Subject Matter Expert)
 
-Lindsay Knupp [knupp.lindsay@epa.gov] - Contributor (Software Development)
+Sarah Davidson-Fritz [davidsonfritz.sarah@epa.gov] (Software Development)
 
-Barbara Wetmore [wetmore.barbara@epa.gov] - Contributor (HTTK Data Generation)
+Anna Kreutz (Raw Data Generation)
 
-Caroline Ring [ring.caroline@epa.gov] - Contributor
+Marci Smeltz (Raw Data Generation)
 
-Zhihui Zhao - Contributor (Software Development)
+David Crizer (Raw Data Generation)
 
-Anna Kreutz - Contributor (HTTK Data Generation)
+### Disclaimer
 
-Marci Smeltz - Contributor (HTTK Data Generation)
-
-## License
-
-License: GPL-3 <https://www.gnu.org/licenses/gpl-3.0.en.html>
+The United States Environmental Protection Agency (EPA) GitHub project code is provided on an “as is” basis and the user assumes responsibility for its use. EPA has relinquished control of the information and no longer has responsibility to protect the integrity, confidentiality, or availability of the information. Any reference to specific commercial products, processes, or services by service mark, trademark, manufacturer, or otherwise, does not constitute or imply their endorsement, recommendation or favoring by EPA. The EPA seal and logo shall not be used in any manner to imply endorsement of any commercial product or activity by EPA or the United States Government.
