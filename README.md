@@ -10,7 +10,7 @@ The assays covered by the pipeline include intrinsic clearance after hepatocyte 
 
 ## Organization of Files
 
-* **final_RData**: Contains a collection of R data files (extension ".RData") which are the final result from processing the raw mass-spectrometry data with the `invitroTKstats` pipeline.
+* **final_RData**: Contains a collection of R data files (extension ".RData") which are the final result from processing the raw mass-spectrometry data with the `invitroTKstats` pipeline and is the staging post before going into the `invitroTKdata` R data package.
 
 * **working**: Contains a set of directories with raw data files from the wet-lab (internal or contracted) and scripts/rmarkdown files necessary to pipeline data to generate the final dataset related to a particular study/manuscript.
 
@@ -37,6 +37,8 @@ Check the package version installed and in use with:
 ```
 packageVersion(invitroTKstats)
 ```
+
+Final datasets (extension ".RData") should be copied to the "final_RData" directory. Upon publication of the related manuscript the dataset may be incorporated into the `invitroTKdata` R data package for use by the wider HTTK modeling and risk assessment community. See the [`invitroTKdata` GitHub](https://github.com/USEPA/invitroTKdata) repository for further details in post-publication stages.
 
 ## Contributors
 
