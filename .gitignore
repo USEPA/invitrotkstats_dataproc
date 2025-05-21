@@ -42,5 +42,10 @@ vignettes/*.pdf
 # Package binaries
 *.tar.gz
 
+# Personal Filepath to Git Repo Clone
+final_RData/gitpath.RData
+# R out files from programmatically running data for package script - ignore for now
+final_RData/*.Rout
+
 
 
