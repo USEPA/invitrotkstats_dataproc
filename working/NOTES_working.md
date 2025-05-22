@@ -17,4 +17,13 @@
   * 05/19/2025:
     * Created a NOTES markdown file in the working directory to help track major updates across time with the organization, inclusion of new data, new projects, data processing, etc.
     
+    * Move files that were in final_RData to a temporary directory and into the working directory.
+    * Rename the R script for compiling data to go into the invitroTKdata R package, and update it to provide more code commentary along with more generalized code for other analysts/users to reproduce/update what is currently here.
+    
+  * 05/21/2025:
+    * Organize files to clarify what needs to stay and what can be cleaned-up from the repo.
+    
+  * 05/22/2025:
+    * Create a draft script, temporary directory, and output 're-processing' the data for Wambaugh2019 with the updated version of the package.
+    * Update the "data for package" R script.
     
