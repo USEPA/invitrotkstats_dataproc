@@ -87,40 +87,40 @@ smeltz2023.uc <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-U
 smeltz2023.clint <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level2.tsv",sep = "/"),
                              sep="\t")
 
-# smeltz2023.red.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level3.tsv",sep = "/"),
-#                               sep = "\t")
-# smeltz2023.red.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level4.tsv",sep = "/"),
-#                               sep = "\t")
-# smeltz2023.uc.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level3.tsv",sep = "/"),
-#                              sep = "\t")
-# smeltz2023.uc.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level4.tsv",sep = "/"),
-#                              sep = "\t")
-# smeltz2023.clint.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level3.tsv",sep = "/"),
-#                                 sep = "\t")
-# smeltz2023.clint.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level4.tsv",sep = "/"),
-#                                 sep = "\t")
+smeltz2023.red.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level3.tsv",sep = "/"),
+                              sep = "\t")
+smeltz2023.red.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level4.tsv",sep = "/"),
+                              sep = "\t")
+smeltz2023.uc.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level3.tsv",sep = "/"),
+                             sep = "\t")
+smeltz2023.uc.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level4.tsv",sep = "/"),
+                             sep = "\t")
+smeltz2023.clint.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level3.tsv",sep = "/"),
+                                sep = "\t")
+smeltz2023.clint.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level4.tsv",sep = "/"),
+                                sep = "\t")
 ### Kreutz et al. (2023) ###
 kreutz2023.uc <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level2.tsv",sep = "/"),
                           sep="\t")
 kreutz2023.clint <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level2.tsv",sep = "/"),
                              sep="\t")
 
-# kreutz2023.uc.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level3.tsv",sep = "/"),
-#                              sep = "\t")
-# kreutz2023.uc.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level4.tsv",sep = "/"),
-#                              sep = "\t")
-# kreutz2023.clint.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level3.tsv",sep = "/"),
-#                                 sep = "\t")
-# kreutz2023.clint.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level4.tsv",sep = "/"),
-#                                 sep = "\t")
+kreutz2023.uc.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level3.tsv",sep = "/"),
+                             sep = "\t")
+kreutz2023.uc.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level4.tsv",sep = "/"),
+                             sep = "\t")
+kreutz2023.clint.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level3.tsv",sep = "/"),
+                                sep = "\t")
+kreutz2023.clint.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level4.tsv",sep = "/"),
+                                sep = "\t")
 ### Crizer et al. (2024) ###
 crizer2024.clint <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level2.tsv",sep = "/"),
                              sep="\t")
 
-# crizer2024.clint.L3 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level3.tsv",sep = "/"),
-#                                 sep = "\t")
-# crizer2024.clint.L4 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level4.tsv",sep = "/"),
-#                                 sep = "\t")
+crizer2024.clint.L3 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level3.tsv",sep = "/"),
+                                sep = "\t")
+crizer2024.clint.L4 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level4.tsv",sep = "/"),
+                                sep = "\t")
 #-----------------------------------------------------------------------------#
 ## Evaluate Current Objects (loaded) Against New Objects (generated above)
 # obtain the generated rdata objects
@@ -169,15 +169,21 @@ if(ow){
   ## Smeltz et al. 2023 ##
   cat("UPDATE WRITE OUT: Smeltz et al. 2023\n")
   save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
+       smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
+       smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
        file="Smeltz2023.RData",
        version=2)
   ## Kreutz et al. 2023 ##
   cat("UPDATE WRITE OUT: Kreutz et al. 2023\n")
   save(kreutz2023.uc,kreutz2023.clint,
+       kreutz2023.uc.L3,kreutz2023.clint.L3,
+       kreutz2023.uc.L4,kreutz2023.uc.L4,
        file="Kreutz2023.RData",
        version=2)
   ## Crizer et al. 2024 ##
   save(crizer2024.clint,
+       crizer2024.clint.L3,
+       crizer2024.clint.L4,
        file="Crizer2024.RData",
        version=2)
 }else{
@@ -187,6 +193,8 @@ if(ow){
   if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")]))){
     cat("NEW WRITE OUT: Smeltz et al. 2023\n")
     save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
+         smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
+         smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
          file="Smeltz2023.RData",
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
@@ -198,6 +206,8 @@ if(ow){
   if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^kreutz2023")]))){
     cat("NEW WRITE OUT: Kreutz et al. 2023\n")
     save(kreutz2023.uc,kreutz2023.clint,
+         kreutz2023.uc.L3,kreutz2023.clint.L3,
+         kreutz2023.uc.L4,kreutz2023.uc.L4,
          file="Kreutz2023.RData",
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
@@ -209,6 +219,8 @@ if(ow){
   if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^crizer2024")]))){
     cat("NEW WRITE OUT: Crizer et al. 2024\n")
     save(crizer2024.clint,
+         crizer2024.clint.L3,
+         crizer2024.clint.L4,
          file="Crizer2024.RData",
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^crizer2024")])!=TRUE)){
