@@ -27,3 +27,8 @@
     * Create a draft script, temporary directory, and output 're-processing' the data for Wambaugh2019 with the updated version of the package.
     * Update the "data for package" R script.
     
+  * 06/03/2025:
+    * Removed free-floating files in temporary directories since they are not relevant/no longer necessary for the general repo.
+    * Moved R markdowns, HTML's, and data files that were in the invitroTKstats vignette directory as supplementary files into manuscript relevant sub-directories.
+    * Updated the git ignore file to allow necessary files to remain available in Git tracking and ignore others no longer needed and/or not necessary to track.
+    
