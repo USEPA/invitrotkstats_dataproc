@@ -50,3 +50,4 @@ final_RData/*.Rout
 # Ignore Temporary/Draft/Intermediate Files #
 working/Wambaugh2019/TMP*
 working/Wambaugh2019/*.pdf
+working/Wambaugh2019/*.Rproj
