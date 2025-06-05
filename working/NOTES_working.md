@@ -32,3 +32,5 @@
     * Moved R markdowns, HTML's, and data files that were in the invitroTKstats vignette directory as supplementary files into manuscript relevant sub-directories.
     * Updated the git ignore file to allow necessary files to remain available in Git tracking and ignore others no longer needed and/or not necessary to track.
     
+  * 06/05/2025:
+    * Move the Crizer Clint vignette to the Crizer manuscript sub-directory and remove the other files/sub-directory 'tmp_final_RData_move' since the RData files are duplicates of those already in the respective manuscript sub-directories.
