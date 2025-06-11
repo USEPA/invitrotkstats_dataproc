@@ -46,7 +46,7 @@ working/NOTES_working.html
 # Personal Filepath to Git Repo Clone
 final_RData/gitpath.RData
 # R out files from programmatically running data for package script - ignore for now
-final_RData/*.Rout
+final_RData/*[0-9].Rout
 
 # Ignore Temporary/Draft/Intermediate Files #
 working/Wambaugh2019/TMP*

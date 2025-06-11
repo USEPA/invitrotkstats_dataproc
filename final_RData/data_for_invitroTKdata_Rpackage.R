@@ -177,7 +177,7 @@ if(ow){
   cat("UPDATE WRITE OUT: Kreutz et al. 2023\n")
   save(kreutz2023.uc,kreutz2023.clint,
        kreutz2023.uc.L3,kreutz2023.clint.L3,
-       kreutz2023.uc.L4,kreutz2023.uc.L4,
+       kreutz2023.uc.L4,kreutz2023.clint.L4,
        file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
        version=2)
   ## Crizer et al. 2024 ##
@@ -207,7 +207,7 @@ if(ow){
     cat("NEW WRITE OUT: Kreutz et al. 2023\n")
     save(kreutz2023.uc,kreutz2023.clint,
          kreutz2023.uc.L3,kreutz2023.clint.L3,
-         kreutz2023.uc.L4,kreutz2023.uc.L4,
+         kreutz2023.uc.L4,kreutz2023.clint.L4,
          file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
