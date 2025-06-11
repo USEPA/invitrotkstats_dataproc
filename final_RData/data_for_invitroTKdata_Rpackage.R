@@ -61,7 +61,7 @@ if(length(arg_set)==0){
 # load the Git_path object
 load(file = paste(getwd(),"gitpath.RData",sep = "/"),verbose = TRUE)
 # set up the final_Rdata_path object 
-final_RData_path <- getwd()
+final_RData_path <- paste(getwd(),"packageready_data",sep = "/")
 # set-up the working_path object - points us to where the data actually is
 working_path <- paste(Git_path,"working",sep = "/")
 #-----------------------------------------------------------------------------#
@@ -171,20 +171,20 @@ if(ow){
   save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
        smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
        smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
-       file="Smeltz2023.RData",
+       file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
        version=2)
   ## Kreutz et al. 2023 ##
   cat("UPDATE WRITE OUT: Kreutz et al. 2023\n")
   save(kreutz2023.uc,kreutz2023.clint,
        kreutz2023.uc.L3,kreutz2023.clint.L3,
        kreutz2023.uc.L4,kreutz2023.uc.L4,
-       file="Kreutz2023.RData",
+       file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
        version=2)
   ## Crizer et al. 2024 ##
   save(crizer2024.clint,
        crizer2024.clint.L3,
        crizer2024.clint.L4,
-       file="Crizer2024.RData",
+       file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
        version=2)
 }else{
   # print notification that files will NOT be overwritten
@@ -195,7 +195,7 @@ if(ow){
     save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
          smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
          smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
-         file="Smeltz2023.RData",
+         file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
     cat("SKIP (at least one FALSE): Smeltz et al. 2023 - file already exists and identifying differences\n")
@@ -208,7 +208,7 @@ if(ow){
     save(kreutz2023.uc,kreutz2023.clint,
          kreutz2023.uc.L3,kreutz2023.clint.L3,
          kreutz2023.uc.L4,kreutz2023.uc.L4,
-         file="Kreutz2023.RData",
+         file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
     cat("SKIP (at least one FALSE): Kreutz et al. 2023 - file already exists and identifying differences\n")
@@ -221,7 +221,7 @@ if(ow){
     save(crizer2024.clint,
          crizer2024.clint.L3,
          crizer2024.clint.L4,
-         file="Crizer2024.RData",
+         file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^crizer2024")])!=TRUE)){
     cat("SKIP (at least one FALSE): Crizer et al. 2024 - file already exists and identifying differences\n")
