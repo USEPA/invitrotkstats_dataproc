@@ -17,8 +17,7 @@ The assays covered by the pipeline include intrinsic clearance after hepatocyte 
   * **CrizerPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Crizer et al. (2024)](https://doi.org/10.3390/toxics12090672).
   * **KreutzPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Kreutz et al. (2023)](https://doi.org/10.3390/toxics11050463).
   * **SmeltzPFAS**: This sub-directory contains data and R markdown files related to data pipelining for [Smeltz et al. (2023)](https://doi.org/10.1021/acs.chemrestox.3c00003).
-  * **old_vignettes**: This sub-directory contains R markdown files, previously utilized as vignettes in prototype versions of the `invitroTKstats` R package, but are related to data pipelining data for published manuscripts. (Old vignettes were moved to the working directory on 02/12/2025.)
-  * **Wambaugh2019_regen-2023**: This sub-directory contains an R script and updated set of generated data files from a more recent version of `invitroTKstats` (i.e. 2023) from the original data generation/pipelining done for [Wambaugh et al. (2019)](https://doi.org/10.1093/toxsci/kfz205).
+  * **Wambaugh2019**: This sub-directory contains data and R script files related to the original data generation/pipelining done for [Wambaugh et al. (2019)](https://doi.org/10.1093/toxsci/kfz205), and some updated scripts/data output using a more recent version of `invitroTKstats` (i.e. 2023).
 
 ## Getting Started with Pipelining
 
