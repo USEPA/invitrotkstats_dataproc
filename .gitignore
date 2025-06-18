@@ -50,5 +50,9 @@ final_RData/*[0-9].Rout
 
 # Ignore Temporary/Draft/Intermediate Files #
 working/Wambaugh2019/TMP*
+working/Wambaugh2019/rscripts/TMP*
+working/Wambaugh2019/rscripts/*.pdf
 working/Wambaugh2019/*.pdf
 working/Wambaugh2019/*.Rproj
+# temporary git ignore until data and script are reviewed and confirmed
+working/Wambaugh2019/*/*ambaugh2019* 
