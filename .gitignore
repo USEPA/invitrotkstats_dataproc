@@ -45,6 +45,7 @@ working/NOTES_working.html
 
 # Personal Filepath to Git Repo Clone
 final_RData/gitpath.RData
+final_RData/gitpath*.RData
 # R out files from programmatically running data for package script - ignore for now
 final_RData/*[0-9].Rout
 
@@ -53,10 +54,13 @@ working/Wambaugh2019/TMP*
 working/Wambaugh2019/rscripts/TMP*
 working/Wambaugh2019/rscripts/*.pdf
 working/Wambaugh2019/*.pdf
-working/Wambaugh2019/*.Rproj
-# temporary git ignore until data and script are reviewed and confirmed
-working/Wambaugh2019/*/*ambaugh2019*
-working/Wambaugh2019/*/L4*
-working/Wambaugh2019/data/ARCHIVE_data
-working/Wambaugh2019/rscripts/Rout/
 
+## Ignore Temporary/Intermediate Wambaugh2019 Files ##
+# ignore the intermediate RData chem_split data files - keep ignore Bayes tsv files
+working/Wambaugh2019/data/L4_chem_split/*.RData
+# ignore the interim files for L4 estimation
+working/Wambaugh2019/data/L4_interim/
+# ignore the archive data files
+working/Wambaugh2019/data/ARCHIVE_data
+# ignore the Rout files from previous runs (dated runs)
+working/Wambaugh2019/rscripts/Rout/Rout_[0-9]*
