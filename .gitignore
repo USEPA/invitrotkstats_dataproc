@@ -48,6 +48,7 @@ final_RData/gitpath.RData
 final_RData/gitpath*.RData
 # R out files from programmatically running data for package script - ignore for now
 final_RData/*[0-9].Rout
+final_RData/Rout_archive
 
 # Ignore Temporary/Draft/Intermediate Files #
 working/Wambaugh2019/TMP*

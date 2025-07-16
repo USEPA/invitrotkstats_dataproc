@@ -79,46 +79,98 @@ for(i in ls(pattern = "[.]clint$|[.]uc$|[.]red$")){
 #-----------------------------------------------------------------------------#
 ## Read-in Final Files & Save to R object
 #### EDIT IF ADDING DATA ####
+#################################
+### Wambaugh et al. (2019) ###
+# Clint #
+# load in the L0-L3 data
+load(paste(working_path,"Wambaugh2019/data/Wambaugh2019_regen2025_Clint_L1-3.RData",sep = "/"),verbose = TRUE)
+# reassign the Level-2 data object
+wambaugh2019.clint <- wambaugh2019.clint.L2
+# Level-3 already named as we expect for the invitroTKdata R data package
+# load in the L4 data
+load(file = paste(working_path,"Wambaugh2019/data/Wambaugh2019_regen2025-Clint-Level4Analysis-2025-07-02.RData",sep = "/"),
+     verbose = TRUE)
+# reassign the Level-4 data
+wambaugh2019.clint.L4 <- Results
+
+# fup RED #
+# load in the L0-L3 data
+load(paste(working_path,"Wambaugh2019/data/Wambaugh2019_regen2025_fupRED_L1-3.RData",sep = "/"),verbose = TRUE)
+# reassign the Level-2 data object
+wambaugh2019.red <- wambaugh2019.red.L2
+# Level-3 already named as we expect for the invitroTKdata R data package
+# load in the L4 data
+load(file = paste(working_path,"Wambaugh2019/data/Wambaugh2019_regen2025-fup-RED-Level4Analysis-2025-07-10.RData",sep = "/"),
+     verbose = TRUE)
+# reassign the Level-4 data
+wambaugh2019.red.L4 <- Results
+#################################
 ### Smeltz et al. (2023) ###
+# fup RED #
+# load and assign Level-2 data
 smeltz2023.red <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level2.tsv",sep = "/"),
                            sep="\t")
-smeltz2023.uc <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level2.tsv",sep = "/"),
-                          sep="\t")
-smeltz2023.clint <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level2.tsv",sep = "/"),
-                             sep="\t")
-
+# load and assign Level-3 data
 smeltz2023.red.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level3.tsv",sep = "/"),
                               sep = "\t")
+# load and assign Level-4 data
 smeltz2023.red.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-fup-RED-Level4.tsv",sep = "/"),
                               sep = "\t")
+
+# fup UC #
+# load and assign Level-2 data
+smeltz2023.uc <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level2.tsv",sep = "/"),
+                          sep="\t")
+# load and assign Level-3 data
 smeltz2023.uc.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level3.tsv",sep = "/"),
                              sep = "\t")
+# load and assign Level-4 data
 smeltz2023.uc.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-PPB-UC-Level4.tsv",sep = "/"),
                              sep = "\t")
+
+# Clint #
+# load and assign Level-2 data
+smeltz2023.clint <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level2.tsv",sep = "/"),
+                             sep="\t")
+# load and assign Level-3 data
 smeltz2023.clint.L3 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level3.tsv",sep = "/"),
                                 sep = "\t")
+# load and assign Level-4 data
 smeltz2023.clint.L4 <- read.csv(file = paste(working_path,"SmeltzPFAS/SmeltzPFAS-Clint-Level4.tsv",sep = "/"),
                                 sep = "\t")
+#################################
 ### Kreutz et al. (2023) ###
+# fup UC #
+# load and assign Level-2 data
 kreutz2023.uc <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level2.tsv",sep = "/"),
                           sep="\t")
-kreutz2023.clint <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level2.tsv",sep = "/"),
-                             sep="\t")
-
+# load and assign Level-3 data
 kreutz2023.uc.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level3.tsv",sep = "/"),
                              sep = "\t")
+# load and assign Level-4 data
 kreutz2023.uc.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-fup-UC-Level4.tsv",sep = "/"),
                              sep = "\t")
+
+# Clint #
+# load and assign Level-2 data
+kreutz2023.clint <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level2.tsv",sep = "/"),
+                             sep="\t")
+# load and assign Level-3 data
 kreutz2023.clint.L3 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level3.tsv",sep = "/"),
                                 sep = "\t")
+# load and assign Level-4 data
 kreutz2023.clint.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS-Clint-Level4.tsv",sep = "/"),
                                 sep = "\t")
+#################################
 ### Crizer et al. (2024) ###
+# Clint #
+# load and assign Level-2 data
 crizer2024.clint <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level2.tsv",sep = "/"),
                              sep="\t")
-
+# load and assign Level-3 data
 crizer2024.clint.L3 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level3.tsv",sep = "/"),
                                 sep = "\t")
+# load and assign Level-4 data
 crizer2024.clint.L4 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level4.tsv",sep = "/"),
                                 sep = "\t")
 #-----------------------------------------------------------------------------#
@@ -129,7 +181,7 @@ new_rdata_obj <- ls(pattern = "[.]clint$|[.]uc$|[.]red$")
 #   NA indicates there is not a current RData file
 test_equal_res <- rep(NA,length(new_rdata_obj))
 names(test_equal_res) <- new_rdata_obj
-# loop over the names of the newly generated rdata objects 
+# loop over the names of the newly generated rdata objects
 for(i in new_rdata_obj){
   cname <- paste0(i,".current")
   if(cname%in%ls()){
@@ -154,7 +206,7 @@ test_equal_res
 ##    `R CMD BATCH --vanilla '--args ow=TRUE' data_for_invitroTKdata_Rpackage.R`
 ##  This should be noted when done since it currently assumes to write out all
 ##  files.  Thus, this should not be done lightly or regularly.
-##  
+##
 ##  One may also consider "archiving" current files that a new version of is
 ##  desired. Again, this should be noted and not done lightly or regularly.
 ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++##
@@ -166,6 +218,13 @@ test_equal_res
 if(ow){
   # print notification that the files will be overwritten
   cat("Overwrite is set to TRUE via command line, write out all files.\n")
+  ## Wambaugh et al. 2019 ##
+  cat("UPDATE WRITE OUT: Wambaugh et al. 2019\n")
+  save(wambaugh2019.clint,wambaugh2019.red,
+       wambaugh2019.clint.L3,wambaugh2019.red.L3,
+       wambaugh2019.clint.L4,wambaugh2019.red.L4,
+       file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
+       version=2)
   ## Smeltz et al. 2023 ##
   cat("UPDATE WRITE OUT: Smeltz et al. 2023\n")
   save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
@@ -189,6 +248,19 @@ if(ow){
 }else{
   # print notification that files will NOT be overwritten
   cat("Overwrite is set to FALSE (default), only write out files with NA.\n")
+  ## Wambaugh et al. 2019 ##
+  if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^wambaugh2019")]))){
+    cat("NEW WRITE OUT: Wambaugh et al. 2019\n")
+    save(wambaugh2019.clint,wambaugh2019.red,
+         wambaugh2019.clint.L3,wambaugh2019.red.L3,
+         wambaugh2019.clint.L4,wambaugh2019.red.L4,
+         file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
+         version=2)
+  }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^wambaugh2019")])!=TRUE)){
+    cat("SKIP (at least one FALSE): Wambaugh et al. 2019 - file already exists and identifying differences\n")
+  }else{
+    cat("SKIP: Wambaugh et al. 2019 - file already exists and all equal\n")
+  }
   ## Smeltz et al. 2023 ##
   if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")]))){
     cat("NEW WRITE OUT: Smeltz et al. 2023\n")
