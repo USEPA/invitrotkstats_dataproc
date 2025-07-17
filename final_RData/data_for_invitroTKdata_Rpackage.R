@@ -31,7 +31,8 @@ if(length(arg_set)==0){
   # print notification of setting defaults
   print("No arguments supplied, setting defaults.")
   # set up the default
-  ow <- FALSE
+  ow <- FALSE # overwrite all files
+  uindF <- FALSE # update individual files that are FALSE
 }else{
   # print the argument set
   print(paste("Command line supplied arguments:",arg_set))
@@ -39,7 +40,9 @@ if(length(arg_set)==0){
   for(i in 1:length(arg_set)){
     eval(parse(text = arg_set[[i]]))
   }
+  # if providing one argument suggest for the time being to supply both (as of 07/17/2025)
   if(!is.logical(ow)){stop("ow command line argument must be TRUE or FALSE (i.e. logical); default is FALSE")}
+  if(!is.logical(uindF)){stop("uindF command line argument must be TRUE or FALSE (i.e. logical); default is FALSE")}
 }
 #-----------------------------------------------------------------------------#
 ## Set-up Directories
@@ -57,6 +60,9 @@ if(length(arg_set)==0){
 ##  trouble-shooting/updating) you may need to provide absolute paths via the
 ##  R console. Not recommended these are hard coded in this script.
 ##+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++##
+
+## R packages ##
+library(stringr)
 
 # load the Git_path object
 load(file = paste(getwd(),"gitpath.RData",sep = "/"),verbose = TRUE)
@@ -167,6 +173,12 @@ kreutz2023.clint.L4 <- read.csv(file = paste(working_path,"KreutzPFAS/KreutzPFAS
 # load and assign Level-2 data
 crizer2024.clint <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level2.tsv",sep = "/"),
                              sep="\t")
+# check for non-ASCII characters
+# apply(crizer2024.clint,2,function(x)table(str_detect(x,"[^[:ascii:]]"))) # `Level0.Sheet` contains non-ASCII values
+# update the Level0.Sheet column to replace non-ASCII characters with "*"
+crizer2024.clint$Level0.Sheet <- stringr::str_replace_all(crizer2024.clint$Level0.Sheet,
+                                                          pattern = "[^[:ascii]]",
+                                                          replacement = "*")
 # load and assign Level-3 data
 crizer2024.clint.L3 <- read.csv(file = paste(working_path,"CrizerPFAS/CrizerPFASApr2024-Clint-Level3.tsv",sep = "/"),
                                 sep = "\t")
@@ -201,9 +213,11 @@ test_equal_res
 ## NOTE: Running this programmatically via the command line assumes that if
 ##  there are any differences in the current and newly generated, then these
 ##  need to be investigated and skipped over when saving files saving files.
-##  However, this can be overcome by passing the overwrite
-##  argument via using the following command in the command line terminal:
-##    `R CMD BATCH --vanilla '--args ow=TRUE' data_for_invitroTKdata_Rpackage.R`
+##  However, this can be overcome by passing the overwrite (ow) or update
+##  individual FALSE (uindF) argument via using the following command in the
+##  command line terminal:
+##    `R CMD BATCH --vanilla '--args ow=<TRUE/FALSE> uindF=<TRUE/FALSE>' data_for_invitroTKdata_Rpackage.R`
+##  Note, both arguments must be specified if either are provided (as of 07/17/2025).
 ##  This should be noted when done since it currently assumes to write out all
 ##  files.  Thus, this should not be done lightly or regularly.
 ##
@@ -240,14 +254,15 @@ if(ow){
        file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
        version=2)
   ## Crizer et al. 2024 ##
+  cat("UPDATE WRITE OUT: Crizer et al. 2024\n")
   save(crizer2024.clint,
        crizer2024.clint.L3,
        crizer2024.clint.L4,
        file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
        version=2)
 }else{
-  # print notification that files will NOT be overwritten
-  cat("Overwrite is set to FALSE (default), only write out files with NA.\n")
+  # print notification that files will NOT be overwritten, unless update individual FALSE (uindF)
+  cat("Overwrite is set to FALSE (default), only write out files with NA, or FALSE and uindF=TRUE.\n")
   ## Wambaugh et al. 2019 ##
   if(all(is.na(test_equal_res[grepl(names(test_equal_res),pattern = "^wambaugh2019")]))){
     cat("NEW WRITE OUT: Wambaugh et al. 2019\n")
@@ -257,7 +272,16 @@ if(ow){
          file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^wambaugh2019")])!=TRUE)){
-    cat("SKIP (at least one FALSE): Wambaugh et al. 2019 - file already exists and identifying differences\n")
+    if(uindF){
+      cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Wambaugh et al. 2019\n")
+      save(wambaugh2019.clint,wambaugh2019.red,
+           wambaugh2019.clint.L3,wambaugh2019.red.L3,
+           wambaugh2019.clint.L4,wambaugh2019.red.L4,
+           file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
+           version=2)
+    }else{
+      cat("SKIP (at least one FALSE): Wambaugh et al. 2019 - file already exists and identifying differences\n")
+    }
   }else{
     cat("SKIP: Wambaugh et al. 2019 - file already exists and all equal\n")
   }
@@ -270,7 +294,16 @@ if(ow){
          file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
-    cat("SKIP (at least one FALSE): Smeltz et al. 2023 - file already exists and identifying differences\n")
+    if(uindF){
+      cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Smeltz et al. 2023\n")
+      save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
+           smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
+           smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
+           file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
+           version=2)
+    }else{
+      cat("SKIP (at least one FALSE): Smeltz et al. 2023 - file already exists and identifying differences\n")
+    }
   }else{
     cat("SKIP: Smeltz et al. 2023 - file already exists and all equal\n")
   }
@@ -283,7 +316,16 @@ if(ow){
          file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
-    cat("SKIP (at least one FALSE): Kreutz et al. 2023 - file already exists and identifying differences\n")
+    if(uindF){
+      cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Kreutz et al. 2023\n")
+      save(kreutz2023.uc,kreutz2023.clint,
+           kreutz2023.uc.L3,kreutz2023.clint.L3,
+           kreutz2023.uc.L4,kreutz2023.clint.L4,
+           file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
+           version=2)
+    }else{
+      cat("SKIP (at least one FALSE): Kreutz et al. 2023 - file already exists and identifying differences\n")
+    }
   }else{
       cat("SKIP: Kreutz et al. 2023 - file already exists and all equal\n")
   }
@@ -296,7 +338,16 @@ if(ow){
          file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
          version=2)
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^crizer2024")])!=TRUE)){
-    cat("SKIP (at least one FALSE): Crizer et al. 2024 - file already exists and identifying differences\n")
+    if(uindF){
+      cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Crizer et al. 2024\n")
+      save(crizer2024.clint,
+           crizer2024.clint.L3,
+           crizer2024.clint.L4,
+           file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
+           version=2)
+    }else{
+      cat("SKIP (at least one FALSE): Crizer et al. 2024 - file already exists and identifying differences\n")
+    }
   }else{
     cat("SKIP: Crizer et al. 2024 - file already exists and all equal\n")
   }
