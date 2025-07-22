@@ -1,0 +1,1855 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #------------------------------------------------------------------------------#
+> ## Re-processing Wambaugh2019 fup-RED (L4) ##
+> #-----------------------------------------------------------------------------#
+> ## NOTE: This script is meant to be run programmatically via the following
+> ##  command in the bash command line terminal:
+> ##  `R CMD BATCH --vanilla '--args chem.group=<integer>' wambaugh2019-fupRED_SPLIT_re-processing2025_L4.R wambaugh2019-fupRED_SPLIT_re-processing2025_L4_MMDDYYYY.Rout`
+> ##    (where SPLIT-X should correspond to the chemical chunk being evaluated, e.g. SPLIT-3)
+> ##    (where MMDDYYYY corresponds to the 2-digit month, 2-digit day, and 4-digit year)
+> #-----------------------------------------------------------------------------#
+> ## Command Line Arguments
+> arg_set <- (commandArgs(TRUE))
+> # check for any arguments passed
+> if(length(arg_set)==0){
++   # stop if no defaults are set
++   stop("No arguments supplied, and no defaults available. Please provide a positive integer for the `chem.group` argument.")
++ }else{
++   # print the argument set
++   print(paste("Command line supplied arguments:",arg_set))
++   # loop over and set the argument set here
++   for(i in 1:length(arg_set)){
++     eval(parse(text = arg_set[[i]]))
++   }
++   if(!is.numeric(chem.group)){stop("`chem.group` command line argument must be numeric; no default available")}
++   if(chem.group<=0){stop("`chem.group` command line argument must be positive numeric integer; no default available")}
++ }
+[1] "Command line supplied arguments: chem.group=7"
+> #------------------------------------------------------------------------------#
+> ## R Packages ##
+> library(invitroTKstats)
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(tictoc)
+Warning message:
+package 'tictoc' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> ## Check Package Version ##
+> packageVersion("invitroTKstats")
+[1] '0.0.13'
+> #------------------------------------------------------------------------------#
+> ## Load in Data ##
+> # print the working directory
+> getwd()
+[1] "C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/rscripts"
+> # load in the split L2 data files
+> load(file = here::here("data/Wambaugh2019_regen2025_fupRED_L2-chemsplit.RData"),verbose = TRUE)
+Loading objects:
+  wambaugh2019.red.L2.SPLIT
+> #------------------------------------------------------------------------------#
+> # check the provided chem.group is valid for the chemical split data subset list
+> if(chem.group > length(wambaugh2019.red.L2.SPLIT)){
++   stop("The `chem.group` arguement provided is larger than the number of available chemical grouping subsets.")
++ }
+> # set up a filename for the particular chemical group split
+> chemsplit_FILENAME <- paste0("Wambaugh2019_regen2025_",chem.group)
+> chemsplit_FILENAME
+[1] "Wambaugh2019_regen2025_7"
+> # show the dimensions of the subset undergoing L4 processing
+> dim(wambaugh2019.red.L2.SPLIT[[chem.group]])
+[1] 921  28
+> # show the number of chemicals to be evaluated with this chemical split
+> length(unique(wambaugh2019.red.L2.SPLIT[[chem.group]]$Compound.Name))
+[1] 50
+> ## Process L2 to L4 ##
+> tictoc::tic()
+> jags_path <- runjags::findJAGS()
+INFO: Could not find files for the given pattern(s).
+> tmp.wambaugh2019.red.L4 <- invitroTKstats::calc_fup_red(
++   data.in = wambaugh2019.red.L2.SPLIT[[chem.group]],
++   FILENAME = chemsplit_FILENAME,
++   TEMP.DIR = here::here("data/L4_interim"),
++   JAGS.PATH = jags_path,
++   OUTPUT.DIR = here::here("data")
++ )
+
+Heldout L2 data to export has been rounded to 3 significant figures.
+[1] "Catechol (1 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:50:34 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Catechol (1 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%             0.0742              1.41e-06   0.0108          -1.250
+50%              0.1190              1.80e-03   0.2280          -1.090
+97.5%            0.1710              3.97e-01   0.4850          -0.946
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%    0.000406            1.48e-06    0.0214 2.24e-10 2.13e-13
+50%     0.012800            1.25e-03    0.6810 1.21e-03 1.15e-06
+97.5%   0.056300            1.40e+00    3.4800 2.77e+04 9.63e-01
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point  Fup.Med  Fup.Low
+1      Catechol        BF00175291 DTXSID3020257     0.228 1.15e-06 2.13e-13
+  Fup.High
+1    0.963
+[1] "Rhodamine 6G (2 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:51:27 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Rhodamine 6G (2 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%              0.116              1.66e-06   0.0102          -0.909
+50%               0.200              8.16e-03   0.2360          -0.775
+97.5%             0.297              5.22e-01   0.4860          -0.621
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%    0.000293            1.43e-06    0.0173 2.03e-10 1.93e-13
+50%     0.009110            1.23e-03    0.5530 8.53e-05 8.10e-08
+97.5%   0.047700            1.40e+00    2.9400 1.75e+03 6.24e-01
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med  Fup.Low
+1  Rhodamine 6G         EV0000612 DTXSID1021243     0.145 8.1e-08 1.93e-13
+  Fup.High
+1    0.624
+[1] "Triethylene glycol dimethyl ether (3 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:52:23 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Triethylene glycol dimethyl ether (3 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.21e-06                 0.357  0.00509            1.18
+50%            6.97e-05                 0.490  0.16100            1.31
+97.5%          7.34e-03                 0.755  0.46600            1.47
+      background Plasma.Interference C.missing    Kd   Fup
+2.5%      0.0138            1.47e-06    0.0104   278 0.209
+50%       0.0223            1.38e-03    0.2580  4280 0.803
+97.5%     0.0320            1.13e+00    1.4000 82900 0.987
+                      Compound.Name Lab.Compound.Name        DTXSID Fup.point
+1 Triethylene glycol dimethyl ether         EV0001868 DTXSID8026224     0.882
+  Fup.Med Fup.Low Fup.High
+1   0.803   0.209    0.987
+[1] "4-Methylbenzophenone (4 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:53:19 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 4-Methylbenzophenone (4 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.17e-06                 0.426  0.00457         0.00542
+50%            2.36e-05                 0.586  0.13200         0.16300
+97.5%          1.13e-03                 0.929  0.46100         0.31300
+      background Plasma.Interference C.missing    Kd     Fup
+2.5%     0.00237            1.48e-06    0.0141  4.96 0.00469
+50%      0.00377            8.89e-04    0.2810 10.10 0.00951
+97.5%    0.00586            8.37e-01    1.3100 21.70 0.02020
+         Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med
+1 4-Methylbenzophenone         EV0001337 DTXSID9037741    0.0304 0.00951
+  Fup.Low Fup.High
+1 0.00469   0.0202
+[1] "2-Mercaptobenzimidazole (5 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:54:15 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 2-Mercaptobenzimidazole (5 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.12e-06                 0.402  0.00922          -0.696
+50%            1.20e-05                 0.565  0.16900          -0.551
+97.5%          2.02e-04                 0.905  0.47600          -0.383
+      background Plasma.Interference C.missing      Kd    Fup
+2.5%    0.000278            1.38e-06    0.0114    90.2 0.0789
+50%     0.000458            1.12e-03    0.2890   245.0 0.1890
+97.5%   0.000742            1.07e+00    1.3900 45200.0 0.9770
+            Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med
+1 2-Mercaptobenzimidazole         EV0001448 DTXSID9025536     0.571   0.189
+  Fup.Low Fup.High
+1  0.0789    0.977
+[1] "Nilutamide (6 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:55:12 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Nilutamide (6 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.13e-06                 0.654   0.0106          -0.664
+50%            9.89e-06                 1.010   0.1890          -0.403
+97.5%          1.14e-04                 2.010   0.4780          -0.177
+      background Plasma.Interference C.missing      Kd    Fup
+2.5%    2.69e-05            1.53e-06     0.013    94.1 0.0821
+50%     7.98e-05            1.13e-03     0.400   600.0 0.3630
+97.5%   1.74e-04            1.14e+00     1.840 72800.0 0.9860
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1    Nilutamide         EV0000623 DTXSID3034165     0.498   0.363  0.0821
+  Fup.High
+1    0.986
+[1] "3,3'-Dimethoxybenzidine dihydrochloride (7 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:56:07 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 3,3'-Dimethoxybenzidine dihydrochloride (7 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.30e-06                 0.571   0.0113          0.0936
+50%            7.50e-05                 0.863   0.1710          0.3250
+97.5%          7.11e-03                 1.660   0.4700          0.5350
+      background Plasma.Interference C.missing    Kd    Fup
+2.5%     0.00393            1.45e-06    0.0122  29.2 0.0270
+50%      0.00878            8.22e-04    0.3650  57.9 0.0521
+97.5%    0.01550            1.13e+00    1.6000 150.0 0.1250
+                            Compound.Name Lab.Compound.Name        DTXSID
+1 3,3'-Dimethoxybenzidine dihydrochloride         EV0001454 DTXSID1020485
+  Fup.point Fup.Med Fup.Low Fup.High
+1     0.286  0.0521   0.027    0.125
+[1] "Naphthalen-2-yl 2-aminobenzoate (8 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:57:06 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic was above 1.1 for 5 parameters after 60000
+iterations taking 45.6 seconds (multi-variate psrf = 5.952).  This may
+indicate poor convergence.
+Extending the simulation to attempt to improve convergence...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:57:53 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. NOTE: Stopping adaptation
+
+. . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is now below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Naphthalen-2-yl 2-aminobenzoate (8 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.31e-06                 0.559 0.000763            1.35
+50%            1.49e-04                 0.852 0.043500            1.58
+97.5%          2.68e-02                 1.630 0.348000            1.77
+      background Plasma.Interference C.missing    Kd     Fup
+2.5%     0.00711            1.33e-06    0.0137 0.442 0.00042
+50%      0.02490            7.84e-04    0.3200 1.620 0.00154
+97.5%    0.04080            4.78e-01    1.5300 9.750 0.00918
+                    Compound.Name Lab.Compound.Name        DTXSID Fup.point
+1 Naphthalen-2-yl 2-aminobenzoate         EV0001462 DTXSID7047697   0.00205
+  Fup.Med Fup.Low Fup.High
+1 0.00154 0.00042  0.00918
+[1] "Tembotrione (9 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:58:40 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Tembotrione (9 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.19e-06                 0.413  0.00882           0.851
+50%            4.95e-05                 0.584  0.17200           1.000
+97.5%          5.35e-03                 0.957  0.47300           1.170
+      background Plasma.Interference C.missing   Kd    Fup
+2.5%     0.00963            1.34e-06    0.0111 17.6 0.0165
+50%      0.01520            9.81e-04    0.2820 31.0 0.0286
+97.5%    0.02250            1.02e+00    1.3900 55.1 0.0498
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1   Tembotrione         EV0002316 DTXSID5047037     0.162  0.0286  0.0165
+  Fup.High
+1   0.0498
+[1] "Benzylparaben (10 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 07:59:36 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Benzylparaben (10 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.16e-06                 0.471  0.00362           -1.22
+50%            1.68e-05                 0.671  0.10800           -1.05
+97.5%          4.89e-04                 1.130  0.45400           -0.88
+      background Plasma.Interference C.missing    Kd     Fup
+2.5%    0.000470            1.38e-06    0.0142  1.68 0.00160
+50%     0.000892            9.07e-04    0.3140  4.83 0.00456
+97.5%   0.001570            8.44e-01    1.4600 16.20 0.01520
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1 Benzylparaben         EV0002358 DTXSID9022526    0.0141 0.00456  0.0016
+  Fup.High
+1   0.0152
+[1] "Methyl 2,4-dihydroxy-3,6-dimethylbenzoate (11 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:00:35 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Methyl 2,4-dihydroxy-3,6-dimethylbenzoate (11 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.16e-06                 0.638  0.00777          -0.630
+50%            1.22e-05                 0.942  0.16700          -0.387
+97.5%          3.40e-04                 1.850  0.47300          -0.165
+      background Plasma.Interference C.missing   Kd    Fup
+2.5%    0.000175            1.35e-06    0.0121 12.0 0.0113
+50%     0.000439            8.95e-04    0.3710 23.7 0.0220
+97.5%   0.000836            1.07e+00    1.7100 47.7 0.0434
+                              Compound.Name Lab.Compound.Name        DTXSID
+1 Methyl 2,4-dihydroxy-3,6-dimethylbenzoate         EV0001398 DTXSID9041653
+  Fup.point Fup.Med Fup.Low Fup.High
+1    0.0894   0.022  0.0113   0.0434
+[1] "Phenobarbital sodium (12 of 26)"
+[1] "Tris(2,3-dibromopropyl) phosphate (13 of 26)"
+[1] "2,4,5-Trichlorophenoxyacetic acid (14 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:01:33 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 2,4,5-Trichlorophenoxyacetic acid (14 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.15e-06                 0.503  0.00847         -0.0792
+50%            1.36e-05                 0.737  0.14100          0.1040
+97.5%          3.64e-04                 1.200  0.45900          0.2900
+      background Plasma.Interference C.missing    Kd    Fup
+2.5%    0.000354            1.36e-06    0.0127  5.18 0.0049
+50%     0.000638            1.18e-03    0.3030 11.10 0.0104
+97.5%   0.001110            1.02e+00    1.4400 22.90 0.0213
+                      Compound.Name Lab.Compound.Name        DTXSID Fup.point
+1 2,4,5-Trichlorophenoxyacetic acid        BF00175322 DTXSID5021388    0.0297
+  Fup.Med Fup.Low Fup.High
+1  0.0104  0.0049   0.0213
+[1] "Fabesetron hydrochloride (15 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:02:39 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Fabesetron hydrochloride (15 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.08e-06                 0.478  0.00898          -0.484
+50%            6.30e-06                 0.696  0.15800          -0.297
+97.5%          9.58e-05                 1.210  0.46400          -0.107
+      background Plasma.Interference C.missing    Kd     Fup
+2.5%    0.000114            1.40e-06    0.0112  9.97 0.00938
+50%     0.000201            1.05e-03    0.3240 18.60 0.01740
+97.5%   0.000339            1.01e+00    1.5100 35.10 0.03230
+             Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med
+1 Fabesetron hydrochloride         EV0001840 DTXSID7048168    0.0739  0.0174
+  Fup.Low Fup.High
+1 0.00938   0.0323
+[1] "Bicalutamide (16 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:04:04 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Bicalutamide (16 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.54e-06                 0.573  0.00968            1.31
+50%            1.30e-03                 0.916  0.16800            1.57
+97.5%          9.64e-03                 1.930  0.47000            1.78
+      background Plasma.Interference C.missing   Kd    Fup
+2.5%    0.000575            1.39e-06    0.0109 13.1 0.0123
+50%     0.004510            1.22e-03    0.3420 26.2 0.0242
+97.5%   0.010700            1.05e+00    1.5500 52.5 0.0475
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1  Bicalutamide         EV0001894 DTXSID2022678    0.0929  0.0242  0.0123
+  Fup.High
+1   0.0475
+[1] "Sodium 4-nitrophenolate (17 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:05:29 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Sodium 4-nitrophenolate (17 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.27e-06                 0.491  0.00395           0.696
+50%            1.62e-04                 0.720  0.15400           0.898
+97.5%          5.28e-02                 1.380  0.46600           1.090
+      background Plasma.Interference C.missing    Kd    Fup
+2.5%     0.00223            1.49e-06    0.0101  28.2 0.0261
+50%      0.04270            2.89e-03    0.3120  53.1 0.0480
+97.5%    0.06570            1.61e+00    1.5500 124.0 0.1060
+            Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med
+1 Sodium 4-nitrophenolate         EV0001926 DTXSID3027320     0.248   0.048
+  Fup.Low Fup.High
+1  0.0261    0.106
+[1] "E-Cinnamic acid (18 of 26)"
+[1] "Phenylparaben (19 of 26)"
+[1] "all-trans-Retinoic acid (20 of 26)"
+[1] "Azobenzene (21 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:06:54 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+The model will need to be run for a further 30545 updates.  This will
+take approximately 30.6 seconds.
+
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:07:58 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. NOTE: Stopping adaptation
+
+. . . . . . . . . Updating 30545
+-------------------------------------------------| 30500
+************************************************** 100%
+* 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Azobenzene (21 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           0.000034              1.42e-06   0.0126         -15.500
+50%            0.527000              5.18e-03   0.2540          -0.903
+97.5%          0.785000              9.74e+00   0.4840          -0.597
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%    0.000517            1.56e-06     0.119 1.97e-10 1.88e-13
+50%     0.012900            1.73e-03     2.170 1.60e-03 1.52e-06
+97.5%   0.097800            1.42e+00     4.830 3.24e+04 9.69e-01
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point  Fup.Med  Fup.Low
+1    Azobenzene        BF00175292 DTXSID8020123      1.31 1.52e-06 1.88e-13
+  Fup.High
+1    0.969
+[1] "1,2-Diphenylhydrazine (22 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:08:49 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+The model will need to be run for a further 75733 updates.  This will
+take approximately 1.2 minutes.
+
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:09:50 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. NOTE: Stopping adaptation
+
+. . . . . . . . . Updating 75733
+-------------------------------------------------| 75700
+************************************************** 100%
+* 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 1,2-Diphenylhydrazine (22 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.86e-06              7.87e-06   0.0167          -21.10
+50%            3.79e-02              6.04e+00   0.2510           -6.61
+97.5%          3.13e-01              9.82e+00   0.4870           -1.14
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%     0.00301            1.39e-06     0.123 1.80e-10 1.71e-13
+50%      0.04370            1.70e-03     2.400 2.80e-03 2.66e-06
+97.5%    0.10300            1.46e+00     4.860 3.34e+04 9.69e-01
+          Compound.Name Lab.Compound.Name        DTXSID Fup.point  Fup.Med
+1 1,2-Diphenylhydrazine        BF00175294 DTXSID7020710     0.733 2.66e-06
+   Fup.Low Fup.High
+1 1.71e-13    0.969
+[1] "Carminic acid (23 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:11:27 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+The model will need to be run for a further 59960 updates.  This will
+take approximately 1 minutes.
+
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:12:33 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. NOTE: Stopping adaptation
+
+. . . . . . . . . Updating 59960
+-------------------------------------------------| 59950
+************************************************** 100%
+* 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Carminic acid (23 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           2.66e-06              1.39e-06    0.011          -16.70
+50%            9.63e-03              2.38e-03    0.244           -2.48
+97.5%          1.45e-02              1.21e+00    0.489           -1.78
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%    0.000926            1.35e-06    0.0337 2.44e-10 2.31e-13
+50%     0.006180            1.36e-03    0.9340 2.49e-04 2.36e-07
+97.5%   0.015700            1.38e+00    4.5900 1.54e+04 9.36e-01
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point  Fup.Med  Fup.Low
+1 Carminic acid         EV0001452 DTXSID9022817    0.0769 2.36e-07 2.31e-13
+  Fup.High
+1    0.936
+[1] "4,4'-Bipyridine (24 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:13:49 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 22
+   Unobserved stochastic nodes: 8
+   Total graph size: 168
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic was above 1.1 for 5 parameters after 60000
+iterations taking 44.8 seconds (multi-variate psrf = 1.034).  This may
+indicate poor convergence.
+Extending the simulation to attempt to improve convergence...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:14:36 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 22
+   Unobserved stochastic nodes: 8
+   Total graph size: 168
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. NOTE: Stopping adaptation
+
+. . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is now below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for 4,4'-Bipyridine (24 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.24e-06                 0.609  0.00755          -0.880
+50%            6.10e-05                 0.928  0.18500          -0.613
+97.5%          4.43e-03                 1.860  0.47600          -0.390
+      background Plasma.Interference C.missing    Kd   Fup
+2.5%     0.00193            1.39e-06    0.0117   128 0.108
+50%      0.00533            8.74e-04    0.3770  1380 0.568
+97.5%    0.01030            1.09e+00    1.7300 81800 0.987
+    Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1 4,4'-Bipyridine         EV0001929 DTXSID2027200     0.621   0.568   0.108
+  Fup.High
+1    0.987
+[1] "Eosin (25 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:15:28 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 14
+   Unobserved stochastic nodes: 8
+   Total graph size: 144
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Eosin (25 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%            0.00245              1.44e-06   0.0139          -23.60
+50%             0.00352              4.81e-04   0.2480           -8.25
+97.5%           0.00536              3.41e-01   0.4870           -3.11
+      background Plasma.Interference C.missing       Kd      Fup
+2.5%    0.000774            1.47e-06     0.109 2.47e-10 2.35e-13
+50%     0.004040            1.58e-03     2.460 2.61e-03 2.48e-06
+97.5%   0.007270            1.27e+00     4.870 3.78e+04 9.73e-01
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point  Fup.Med  Fup.Low
+1         Eosin         EV0002022 DTXSID0025234    0.0304 2.48e-06 2.35e-13
+  Fup.High
+1    0.973
+[1] "Malathion (26 of 26)"
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+INFO: Could not find files for the given pattern(s).
+
+Auto-run JAGS
+
+Running a pilot chain...
+INFO: Could not find files for the given pattern(s).
+Calling 2 simulations using the parallel method...
+Following the progress of chain 1 (the program will wait for all chains
+to finish before continuing):
+Welcome to JAGS 4.3.1 on Fri Jul 11 08:16:31 2025
+JAGS is free software and comes with ABSOLUTELY NO WARRANTY
+Loading module: basemod: ok
+Loading module: bugs: ok
+. . Reading data file data.txt
+. Compiling model graph
+   Resolving undeclared variables
+   Allocating nodes
+Graph information:
+   Observed stochastic nodes: 24
+   Unobserved stochastic nodes: 8
+   Total graph size: 174
+. Reading parameter file inits1.txt
+. Reading parameter file inits3.txt
+. Reading parameter file inits5.txt
+. Initializing model
+. Adapting 10000
+-------------------------------------------------| 10000
+++++++++++++++++++++++++++++++++++++++++++++++++++ 100%
+Adaptation successful
+. Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . . . . . Updating 25000
+-------------------------------------------------| 25000
+************************************************** 100%
+. . . . . . Updating 0
+. Deleting model
+. 
+All chains have finished
+Simulation complete.  Reading coda files...
+Coda files loaded successfully
+Finished running the simulation
+
+Calculating the Gelman-Rubin statistic for 9 variables....
+The Gelman-Rubin statistic is below 1.1 for all parameters
+
+Calculating the necessary sample length based on the Raftery and
+Lewis's diagnostic...
+Indicated sample length achieved
+INFO: Could not find files for the given pattern(s).
+Auto-run JAGS complete
+
+[1] "Final results for Malathion (26 of 26)"
+      const.analytic.sd hetero.analytic.slope C.thresh log.calibration
+2.5%           1.23e-06                 0.369   0.0062           -2.04
+50%            1.98e-05                 0.557   0.1730           -1.89
+97.5%          1.18e-04                 0.930   0.4720           -1.75
+      background Plasma.Interference C.missing    Kd    Fup
+2.5%    3.78e-05            1.44e-06    0.0115  52.3 0.0473
+50%     1.08e-04            1.43e-03    0.2510 101.0 0.0876
+97.5%   2.03e-04            1.10e+00    1.2400 377.0 0.2640
+  Compound.Name Lab.Compound.Name        DTXSID Fup.point Fup.Med Fup.Low
+1     Malathion        BF00174522 DTXSID4020791      0.34  0.0876  0.0473
+  Fup.High
+1    0.264
+A level-4 file named Wambaugh2019_regen2025_7-fup-RED-Level4Analysis-2025-07-11.RData has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+A subset of ignored data named Wambaugh2019_regen2025_7-fup-RED-Level2-ignoredbayes.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+> tictoc::toc()
+1633.76 sec elapsed
+> #------------------------------------------------------------------------------#
+> ## Save Data ##
+> # set up the object and file names for saving results
+> save_objectname <- paste0("wambaugh2019.red.L4",".chemsplit.",chem.group)
+> save_filename   <- paste0("Wambaugh2019_regen2025_fupRED_L4","-chemsplit-",chem.group,".RData")
+> # assign the temporary object to a chem split specific object name
+> assign(x = save_objectname,tmp.wambaugh2019.red.L4)
+> 
+> # print save file path
+> here::here("data",save_filename)
+[1] "C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data/Wambaugh2019_regen2025_fupRED_L4-chemsplit-7.RData"
+> # save the primary data
+> save(
++   list = c(save_objectname),
++   file = here::here("data",save_filename)
++ )
+> #------------------------------------------------------------------------------#
+> ## Session Information ##
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1            tictoc_1.2.1          stringr_1.5.1        
+[4] magrittr_2.0.3        dplyr_1.1.4           invitroTKstats_0.0.13
+
+loaded via a namespace (and not attached):
+ [1] vctrs_0.6.5        cli_3.6.5          rlang_1.1.6        stringi_1.8.7     
+ [5] generics_0.1.4     glue_1.8.0         rprojroot_2.0.4    stats4_4.4.2      
+ [9] readxl_1.4.5       scales_1.4.0       grid_4.4.2         cellranger_1.1.0  
+[13] tibble_3.3.0       lifecycle_1.0.4    compiler_4.4.2     coda_0.19-4.1     
+[17] RColorBrewer_1.1-3 pkgconfig_2.0.3    rstudioapi_0.17.1  runjags_2.2.2-5   
+[21] farver_2.1.2       lattice_0.22-7     R6_2.6.1           tidyselect_1.2.1  
+[25] pillar_1.10.2      Rdpack_2.6.4       parallel_4.4.2     rbibutils_2.3     
+[29] tools_4.4.2        gtable_0.3.6       ggplot2_3.5.2     
+> Sys.time()
+[1] "2025-07-11 08:17:39 EDT"
+> #------------------------------------------------------------------------------#
+> 
+> proc.time()
+   user  system elapsed 
+ 266.21   56.62 1639.21 

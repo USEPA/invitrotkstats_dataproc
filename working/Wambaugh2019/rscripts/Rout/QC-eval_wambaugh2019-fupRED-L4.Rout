@@ -1,0 +1,1434 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #==============================================================================#
+> ## Post QC Data Check for Level-4 Estimates ##
+> #==============================================================================#
+> ## R Packages ##
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> #==============================================================================#
+> ## Load in the Data ##
+> load(here::here("data/Wambaugh2019_regen2025_fupRED_L1-3.RData"),verbose = TRUE) # load in the L1-L3 data, specifically for L2
+Loading objects:
+  wambaugh2019.red.L0
+  wambaugh2019.red.L1
+  wambaugh2019.red.L2
+  wambaugh2019.red.L3
+> load(here::here("data/Wambaugh2019_regen2025-fup-RED-Level4Analysis-2025-07-10.RData"),verbose = TRUE) # load in compiled L4 data
+Loading objects:
+  Results
+> #==============================================================================#
+> ## Items to Check:
+> ##  1) Determine the chemicals lacking level-4 estimates.
+> ##  2) Determine whether the chemicals lacking level-4 estimates are missing
+> ##     required sample types.
+> ##  3) For the chemicals with sufficient sample types, determine what other
+> ##     factors may be causing a lack of an estimate (start with `Responses`).
+> #=============================================================================#
+> ## General Investigation of Data ##
+> # total number of compounds in the L2 dataset that may be evaluated
+> length(unique(wambaugh2019.red.L2$Compound.Name))
+[1] 401
+> # dimensions for the L4 Results Table - i.e. compounds with a Bayesian estimate
+> dim(Results)
+[1] 301   7
+> 
+> ## Evaluate the Compounds not without L4 Estimates ##
+> # obtain the full chem list (level-2 dataset)
+> full_chem_list <- unique(wambaugh2019.red.L2$Compound.Name) 
+> # obtain the chemicals without a level-4 estimation
+> chem_noL4 <- full_chem_list[which(!(full_chem_list%in%Results$Compound.Name))] 
+> # get the number of chemicals without a level-4 estimate
+> length(chem_noL4)
+[1] 100
+> 
+> ## Required Sample Type Check ##
+> # subset level-2 data to get only those without a level-4 estimate
+> L2_noL4 <- wambaugh2019.red.L2 %>% 
++   dplyr::filter(.,Compound.Name %in% chem_noL4)
+> 
+> # check the sample types that are missing for each chemical lacking a level-4 estimate
+> table(L2_noL4[,c("Compound.Name","Sample.Type")]) %>% 
++   apply(.,1,function(X)names(X)[which(X == 0)]) %>% 
++   unlist() %>% as.data.frame() %>%
++   table()
+.
+         PBS       Plasma Plasma.Blank 
+          26            6           87 
+> 
+> # obtain a dataset summarizing the unique sample types
+> unique_ST_DF <- wambaugh2019.red.L2 %>% 
++   dplyr::group_by(.,Compound.Name) %>% 
++   dplyr::reframe(.,unique_ST = unique(Sample.Type))
+> 
+> sample_type_check <- unique_ST_DF %>% 
++   dplyr::filter(.,unique_ST != "T0") %>% # T0 is not a required sample type at this time, thus remove from sample type list
++   aggregate(unique_ST ~ Compound.Name,data = .,FUN = function(x)paste(x, collapse = "|")) # collapse the existing sample types for each compound
+> 
+> # create a list of all possible entries for the required sample type (combinations of collapsed strings)
+> req.sample.type.list <- c("Plasma.Blank|PBS|Plasma","Plasma|PBS|Plasma.Blank",
++                           "PBS|Plasma|Plasma.Blank","PBS|Plasma.Blank|Plasma",
++                           "Plasma|Plasma.Blank|PBS","Plasma.Blank|Plasma|PBS|")
+> 
+> # obtain the chemicals without the required sample types for level-4 estimates
+> chem_wo_reqST <- sample_type_check[which(!(sample_type_check$unique_ST%in%req.sample.type.list)),"Compound.Name"]
+> # number of chemicals without the required sample types for level-4 estimates
+> length(chem_wo_reqST)
+[1] 380
+> 
+> # is the number of chemicals without a level-4 estimates equal to the number of chemicals without sufficient sample types
+> length(chem_noL4)==length(chem_wo_reqST)
+[1] FALSE
+> # obtain the set difference
+> setdiff(chem_noL4,chem_wo_reqST) # chemicals with sufficient sample types but no estimate
+[1] "p,p'-DDT"
+> 
+> # obtain the samples for chemicals with sufficient samples but still lack a level-4 estimate
+> L2_noL4.suffsamp <- wambaugh2019.red.L2 %>% 
++   dplyr::filter(.,Compound.Name %in% setdiff(chem_noL4,chem_wo_reqST))
+> # obtain the mean response of the compounds with sufficient samples but lacking a level-4 estimate
+> L2_noL4.suffsamp %>% 
++   dplyr::group_by(Compound.Name,Sample.Type) %>% 
++   dplyr::summarise(.,mean_resp = mean(Response,na.rm = FALSE)) # keep cases with missing data
+`summarise()` has grouped output by 'Compound.Name'. You can override using the
+`.groups` argument.
+# A tibble: 4 × 3
+# Groups:   Compound.Name [1]
+  Compound.Name Sample.Type  mean_resp
+  <chr>         <chr>            <dbl>
+1 p,p'-DDT      PBS                 NA
+2 p,p'-DDT      Plasma              NA
+3 p,p'-DDT      Plasma.Blank        NA
+4 p,p'-DDT      T0                  NA
+> 
+> L2_noL4.suffsamp %>% 
++   dplyr::group_by(Compound.Name,Sample.Type) %>% 
++   dplyr::summarise(.,mean_resp = mean(Response,na.rm = TRUE)) # remove cases with missing data
+`summarise()` has grouped output by 'Compound.Name'. You can override using the
+`.groups` argument.
+# A tibble: 4 × 3
+# Groups:   Compound.Name [1]
+  Compound.Name Sample.Type  mean_resp
+  <chr>         <chr>            <dbl>
+1 p,p'-DDT      PBS                NaN
+2 p,p'-DDT      Plasma             NaN
+3 p,p'-DDT      Plasma.Blank       NaN
+4 p,p'-DDT      T0                 NaN
+>   # at least 1 sample type has only missing values
+> 
+> # check the chemicals with level-4 estimates that none of them have all missing data
+> wambaugh2019.red.L2 %>% 
++   dplyr::filter(.,Compound.Name %in% setdiff(full_chem_list,chem_noL4)) %>% 
++   dplyr::group_by(Compound.Name,Sample.Type) %>% 
++   dplyr::summarise(.,mean_resp = mean(Response,na.rm = TRUE)) %>% 
++   dplyr::filter(.,is.nan(mean_resp))
+`summarise()` has grouped output by 'Compound.Name'. You can override using the
+`.groups` argument.
+# A tibble: 0 × 3
+# Groups:   Compound.Name [0]
+# ℹ 3 variables: Compound.Name <chr>, Sample.Type <chr>, mean_resp <dbl>
+> 
+> wambaugh2019.red.L2 %>% 
++   dplyr::filter(.,Compound.Name %in% setdiff(full_chem_list,chem_noL4)) %>% 
++   dplyr::group_by(Compound.Name,Sample.Type) %>% 
++   dplyr::summarise(.,mean_resp = mean(Response,na.rm = TRUE)) %>% 
++   dplyr::filter(.,is.na(mean_resp))
+`summarise()` has grouped output by 'Compound.Name'. You can override using the
+`.groups` argument.
+# A tibble: 0 × 3
+# Groups:   Compound.Name [0]
+# ℹ 3 variables: Compound.Name <chr>, Sample.Type <chr>, mean_resp <dbl>
+> 
+> wambaugh2019.red.L2 %>% 
++   dplyr::filter(.,Compound.Name %in% setdiff(full_chem_list,chem_noL4)) %>% 
++   dplyr::group_by(Compound.Name,Sample.Type) %>% 
++   dplyr::summarise(.,mean_resp = mean(Response,na.rm = TRUE)) %>% 
++   print(n = nrow(.))
+`summarise()` has grouped output by 'Compound.Name'. You can override using the
+`.groups` argument.
+# A tibble: 1,204 × 3
+# Groups:   Compound.Name [301]
+     Compound.Name                                         Sample.Type mean_resp
+     <chr>                                                 <chr>           <dbl>
+   1 (6)-Gingerol                                          PBS           4.99e-1
+   2 (6)-Gingerol                                          Plasma        7.47e-1
+   3 (6)-Gingerol                                          Plasma.Bla…   9.23e-3
+   4 (6)-Gingerol                                          T0            1.12e+0
+   5 1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane      PBS           1.24e-3
+   6 1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane      Plasma        9.03e-2
+   7 1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane      Plasma.Bla…   6.60e-5
+   8 1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane      T0            1.33e-1
+   9 1,2,3-Benzotriazole                                   PBS           1.73e-1
+  10 1,2,3-Benzotriazole                                   Plasma        1.39e-1
+  11 1,2,3-Benzotriazole                                   Plasma.Bla…   8.67e-3
+  12 1,2,3-Benzotriazole                                   T0            3.40e-1
+  13 1,2,4-Trichlorobenzene                                PBS           1.12e-1
+  14 1,2,4-Trichlorobenzene                                Plasma        2.06e-1
+  15 1,2,4-Trichlorobenzene                                Plasma.Bla…   1.28e-1
+  16 1,2,4-Trichlorobenzene                                T0            1.75e-1
+  17 1,2-Dimethyl-3-nitrobenzene                           PBS           0      
+  18 1,2-Dimethyl-3-nitrobenzene                           Plasma        1.40e-1
+  19 1,2-Dimethyl-3-nitrobenzene                           Plasma.Bla…   0      
+  20 1,2-Dimethyl-3-nitrobenzene                           T0            3.09e-1
+  21 1,2-Diphenylhydrazine                                 PBS           1.09e-1
+  22 1,2-Diphenylhydrazine                                 Plasma        1.24e-1
+  23 1,2-Diphenylhydrazine                                 Plasma.Bla…   3.22e-1
+  24 1,2-Diphenylhydrazine                                 T0            3.24e-1
+  25 1,4-Bis(N-isopropylamino)anthraquinone                PBS           1.80e+0
+  26 1,4-Bis(N-isopropylamino)anthraquinone                Plasma        8.26e+2
+  27 1,4-Bis(N-isopropylamino)anthraquinone                Plasma.Bla…   1.22e-2
+  28 1,4-Bis(N-isopropylamino)anthraquinone                T0            7.58e+2
+  29 1-(Hydroxymethyl)-5,5-dimethylhydantoin               PBS           7.26e-1
+  30 1-(Hydroxymethyl)-5,5-dimethylhydantoin               Plasma        2.03e-1
+  31 1-(Hydroxymethyl)-5,5-dimethylhydantoin               Plasma.Bla…   2.94e-1
+  32 1-(Hydroxymethyl)-5,5-dimethylhydantoin               T0            8.79e-1
+  33 1-Benzylquinolinium chloride                          PBS           2.43e+1
+  34 1-Benzylquinolinium chloride                          Plasma        1.28e+1
+  35 1-Benzylquinolinium chloride                          Plasma.Bla…   2.45e-3
+  36 1-Benzylquinolinium chloride                          T0            2.79e+1
+  37 1-Dodecyl-2-pyrrolidinone                             PBS           9.77e-2
+  38 1-Dodecyl-2-pyrrolidinone                             Plasma        1.56e+1
+  39 1-Dodecyl-2-pyrrolidinone                             Plasma.Bla…   2.48e-4
+  40 1-Dodecyl-2-pyrrolidinone                             T0            1.72e+1
+  41 1-Hydroxypyrene                                       PBS           3.99e+1
+  42 1-Hydroxypyrene                                       Plasma        3.58e+1
+  43 1-Hydroxypyrene                                       Plasma.Bla…   1.81e+1
+  44 1-Hydroxypyrene                                       T0            3.82e+1
+  45 17alpha-Hydroxyprogesterone                           PBS           6.58e-1
+  46 17alpha-Hydroxyprogesterone                           Plasma        1.11e+0
+  47 17alpha-Hydroxyprogesterone                           Plasma.Bla…   2.34e-2
+  48 17alpha-Hydroxyprogesterone                           T0            1.26e+0
+  49 2',3'-Dideoxyinosine                                  PBS           2.04e-1
+  50 2',3'-Dideoxyinosine                                  Plasma        6.43e-2
+  51 2',3'-Dideoxyinosine                                  Plasma.Bla…   6.43e-3
+  52 2',3'-Dideoxyinosine                                  T0            2.03e-1
+  53 2',4',5',7'-Tetrabromofluorescein                     PBS           1.12e-4
+  54 2',4',5',7'-Tetrabromofluorescein                     Plasma        5.79e-2
+  55 2',4',5',7'-Tetrabromofluorescein                     Plasma.Bla…   0      
+  56 2',4',5',7'-Tetrabromofluorescein                     T0            6.69e-2
+  57 2,2',4,4'-Tetrahydroxybenzophenone                    PBS           1.85e+0
+  58 2,2',4,4'-Tetrahydroxybenzophenone                    Plasma        5.66e+0
+  59 2,2',4,4'-Tetrahydroxybenzophenone                    Plasma.Bla…   5.21e-3
+  60 2,2',4,4'-Tetrahydroxybenzophenone                    T0            6.91e+0
+  61 2,2',6,6'-Tetrachlorobisphenol A                      PBS           8.54e-5
+  62 2,2',6,6'-Tetrachlorobisphenol A                      Plasma        7.54e-2
+  63 2,2',6,6'-Tetrachlorobisphenol A                      Plasma.Bla…   1.59e-6
+  64 2,2',6,6'-Tetrachlorobisphenol A                      T0            8.31e-2
+  65 2,2'-Methylenebis(4-methyl-6-tert-butylphenol)        PBS           7.54e-3
+  66 2,2'-Methylenebis(4-methyl-6-tert-butylphenol)        Plasma        4.77e+1
+  67 2,2'-Methylenebis(4-methyl-6-tert-butylphenol)        Plasma.Bla…   6.49e-3
+  68 2,2'-Methylenebis(4-methyl-6-tert-butylphenol)        T0            5.05e+1
+  69 2,2'-Methylenebis(ethyl-6-tert-butylphenol)           PBS           1.99e-3
+  70 2,2'-Methylenebis(ethyl-6-tert-butylphenol)           Plasma        7.49e+1
+  71 2,2'-Methylenebis(ethyl-6-tert-butylphenol)           Plasma.Bla…   2.22e-3
+  72 2,2'-Methylenebis(ethyl-6-tert-butylphenol)           T0            8.05e+1
+  73 2,3,4-Trihydroxbenzophenone                           PBS           1.01e-3
+  74 2,3,4-Trihydroxbenzophenone                           Plasma        8.73e-3
+  75 2,3,4-Trihydroxbenzophenone                           Plasma.Bla…   1.74e-5
+  76 2,3,4-Trihydroxbenzophenone                           T0            1.18e-2
+  77 2,3-Dinitrotoluene                                    PBS           2.69e-1
+  78 2,3-Dinitrotoluene                                    Plasma        3.16e-1
+  79 2,3-Dinitrotoluene                                    Plasma.Bla…   0      
+  80 2,3-Dinitrotoluene                                    T0            2.96e-1
+  81 2,4,4'-Trihydroxybenzophenone                         PBS           3.17e-2
+  82 2,4,4'-Trihydroxybenzophenone                         Plasma        1.97e-1
+  83 2,4,4'-Trihydroxybenzophenone                         Plasma.Bla…   2.60e-3
+  84 2,4,4'-Trihydroxybenzophenone                         T0            2.33e-1
+  85 2,4,5-Trichlorophenoxyacetic acid                     PBS           1.27e-1
+  86 2,4,5-Trichlorophenoxyacetic acid                     Plasma        1.71e+0
+  87 2,4,5-Trichlorophenoxyacetic acid                     Plasma.Bla…   6.94e-4
+  88 2,4,5-Trichlorophenoxyacetic acid                     T0            2.55e+0
+  89 2,4-Dihydroxybenzophenone                             PBS           7.03e-2
+  90 2,4-Dihydroxybenzophenone                             Plasma        6.81e-1
+  91 2,4-Dihydroxybenzophenone                             Plasma.Bla…   4.80e-4
+  92 2,4-Dihydroxybenzophenone                             T0            7.30e-1
+  93 2,6,10-Trimethyl-2,6,10-triazaundecane                PBS           6.22e+0
+  94 2,6,10-Trimethyl-2,6,10-triazaundecane                Plasma        1.30e+1
+  95 2,6,10-Trimethyl-2,6,10-triazaundecane                Plasma.Bla…   4.04e-1
+  96 2,6,10-Trimethyl-2,6,10-triazaundecane                T0            1.34e+1
+  97 2-(2H-Benzotriazol-2-yl)-4,6-bis(1-methyl-1-phenylet… PBS           9.60e-4
+  98 2-(2H-Benzotriazol-2-yl)-4,6-bis(1-methyl-1-phenylet… Plasma        1.14e-3
+  99 2-(2H-Benzotriazol-2-yl)-4,6-bis(1-methyl-1-phenylet… Plasma.Bla…   5.18e-4
+ 100 2-(2H-Benzotriazol-2-yl)-4,6-bis(1-methyl-1-phenylet… T0            6.77e-4
+ 101 2-(4-Hydroxybenzyl)phenol                             PBS           4.65e-4
+ 102 2-(4-Hydroxybenzyl)phenol                             Plasma        1.71e-3
+ 103 2-(4-Hydroxybenzyl)phenol                             Plasma.Bla…   1.38e-6
+ 104 2-(4-Hydroxybenzyl)phenol                             T0            2.56e-3
+ 105 2-Amino-5-azotoluene                                  PBS           1.41e-2
+ 106 2-Amino-5-azotoluene                                  Plasma        1.00e+0
+ 107 2-Amino-5-azotoluene                                  Plasma.Bla…   3.54e-4
+ 108 2-Amino-5-azotoluene                                  T0            1.27e+0
+ 109 2-Aminoanthraquinone                                  PBS           9.26e-1
+ 110 2-Aminoanthraquinone                                  Plasma        3.02e+0
+ 111 2-Aminoanthraquinone                                  Plasma.Bla…   6.95e-4
+ 112 2-Aminoanthraquinone                                  T0            4.61e+0
+ 113 2-Chloro-N-phenylacetamide                            PBS           2.72e-2
+ 114 2-Chloro-N-phenylacetamide                            Plasma        1.78e-2
+ 115 2-Chloro-N-phenylacetamide                            Plasma.Bla…   9.69e-7
+ 116 2-Chloro-N-phenylacetamide                            T0            3.61e-2
+ 117 2-Ethyl-3-hydroxy-4H-pyran-4-one                      PBS           6.33e-2
+ 118 2-Ethyl-3-hydroxy-4H-pyran-4-one                      Plasma        3.70e-2
+ 119 2-Ethyl-3-hydroxy-4H-pyran-4-one                      Plasma.Bla…   5.76e-4
+ 120 2-Ethyl-3-hydroxy-4H-pyran-4-one                      T0            8.10e-2
+ 121 2-Ethylhexyl 4-(dimethylamino)benzoate                PBS           1.35e+0
+ 122 2-Ethylhexyl 4-(dimethylamino)benzoate                Plasma        1.00e+3
+ 123 2-Ethylhexyl 4-(dimethylamino)benzoate                Plasma.Bla…   4.38e-1
+ 124 2-Ethylhexyl 4-(dimethylamino)benzoate                T0            9.34e+2
+ 125 2-Hydroxy-4-methoxybenzophenone                       PBS           3.94e-5
+ 126 2-Hydroxy-4-methoxybenzophenone                       Plasma        9.68e-4
+ 127 2-Hydroxy-4-methoxybenzophenone                       Plasma.Bla…   4.18e-6
+ 128 2-Hydroxy-4-methoxybenzophenone                       T0            1.36e-3
+ 129 2-Mercaptobenzimidazole                               PBS           2.97e-1
+ 130 2-Mercaptobenzimidazole                               Plasma        2.08e-1
+ 131 2-Mercaptobenzimidazole                               Plasma.Bla…   4.71e-4
+ 132 2-Mercaptobenzimidazole                               T0            3.74e-1
+ 133 2-Mercaptobenzothiazole                               PBS           4.04e-1
+ 134 2-Mercaptobenzothiazole                               Plasma        3.08e+0
+ 135 2-Mercaptobenzothiazole                               Plasma.Bla…   3.54e-4
+ 136 2-Mercaptobenzothiazole                               T0            4.41e+0
+ 137 2-Methylaniline                                       PBS           8.86e-2
+ 138 2-Methylaniline                                       Plasma        7.36e-2
+ 139 2-Methylaniline                                       Plasma.Bla…   6.06e-5
+ 140 2-Methylaniline                                       T0            2.85e-1
+ 141 2-Naphthalenol                                        PBS           4.54e-1
+ 142 2-Naphthalenol                                        Plasma        7.48e-1
+ 143 2-Naphthalenol                                        Plasma.Bla…   4.28e-1
+ 144 2-Naphthalenol                                        T0            5.78e-1
+ 145 2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid     PBS           3.89e-2
+ 146 2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid     Plasma        9.90e-1
+ 147 2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid     Plasma.Bla…   2.10e-4
+ 148 2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid     T0            1.04e+0
+ 149 3,3',5,5'-Tetrabromobisphenol A                       PBS           5.37e-5
+ 150 3,3',5,5'-Tetrabromobisphenol A                       Plasma        3.26e-1
+ 151 3,3',5,5'-Tetrabromobisphenol A                       Plasma.Bla…   3.54e-6
+ 152 3,3',5,5'-Tetrabromobisphenol A                       T0            2.86e-1
+ 153 3,3'-Dimethoxybenzidine dihydrochloride               PBS           1.35e+0
+ 154 3,3'-Dimethoxybenzidine dihydrochloride               Plasma        1.89e+0
+ 155 3,3'-Dimethoxybenzidine dihydrochloride               Plasma.Bla…   1.04e-2
+ 156 3,3'-Dimethoxybenzidine dihydrochloride               T0            2.36e+0
+ 157 3,3'-Dimethylbenzidine dihydrochloride                PBS           6.64e-1
+ 158 3,3'-Dimethylbenzidine dihydrochloride                Plasma        1.14e+0
+ 159 3,3'-Dimethylbenzidine dihydrochloride                Plasma.Bla…   2.14e-2
+ 160 3,3'-Dimethylbenzidine dihydrochloride                T0            2.59e+0
+ 161 3,5,3'-Triiodothyronine                               PBS           5.28e-4
+ 162 3,5,3'-Triiodothyronine                               Plasma        2.55e-2
+ 163 3,5,3'-Triiodothyronine                               Plasma.Bla…   1.53e-4
+ 164 3,5,3'-Triiodothyronine                               T0            3.08e-2
+ 165 3,5-Dichloroaniline                                   PBS           4.31e-1
+ 166 3,5-Dichloroaniline                                   Plasma        1.23e+0
+ 167 3,5-Dichloroaniline                                   Plasma.Bla…   3.72e-6
+ 168 3,5-Dichloroaniline                                   T0            1.71e+0
+ 169 3,5-Dichlorosalicyl-3,4-dichloroanullide              PBS           2.71e-4
+ 170 3,5-Dichlorosalicyl-3,4-dichloroanullide              Plasma        1.76e+0
+ 171 3,5-Dichlorosalicyl-3,4-dichloroanullide              Plasma.Bla…   3.52e-4
+ 172 3,5-Dichlorosalicyl-3,4-dichloroanullide              T0            1.68e+0
+ 173 3-Chloro-4-methylaniline                              PBS           7.52e-1
+ 174 3-Chloro-4-methylaniline                              Plasma        1.30e+0
+ 175 3-Chloro-4-methylaniline                              Plasma.Bla…   5.68e-5
+ 176 3-Chloro-4-methylaniline                              T0            2.14e+0
+ 177 3-Dimethylaminophenol                                 PBS           2.73e-2
+ 178 3-Dimethylaminophenol                                 Plasma        3.01e-2
+ 179 3-Dimethylaminophenol                                 Plasma.Bla…   9.38e-4
+ 180 3-Dimethylaminophenol                                 T0            1.20e-1
+ 181 3-Iodo-2-propynyl-N-butylcarbamate                    PBS           2.10e-2
+ 182 3-Iodo-2-propynyl-N-butylcarbamate                    Plasma        2.77e-3
+ 183 3-Iodo-2-propynyl-N-butylcarbamate                    Plasma.Bla…   4.67e-3
+ 184 3-Iodo-2-propynyl-N-butylcarbamate                    T0            3.16e-1
+ 185 3-Methylaniline                                       PBS           8.10e-2
+ 186 3-Methylaniline                                       Plasma        6.78e-2
+ 187 3-Methylaniline                                       Plasma.Bla…   6.05e-5
+ 188 3-Methylaniline                                       T0            2.98e-1
+ 189 3-Methylanulline                                      PBS           8.94e-3
+ 190 3-Methylanulline                                      Plasma        5.30e-3
+ 191 3-Methylanulline                                      Plasma.Bla…   3.18e-3
+ 192 3-Methylanulline                                      T0            1.20e-2
+ 193 3-Phenoxybenzoic acid                                 PBS           1.23e-3
+ 194 3-Phenoxybenzoic acid                                 Plasma        6.67e-2
+ 195 3-Phenoxybenzoic acid                                 Plasma.Bla…   1.25e-4
+ 196 3-Phenoxybenzoic acid                                 T0            6.87e-2
+ 197 4,4'-(9H-Fluorene-9,9-diyl)diphenol                   PBS           2.59e-4
+ 198 4,4'-(9H-Fluorene-9,9-diyl)diphenol                   Plasma        1.28e-1
+ 199 4,4'-(9H-Fluorene-9,9-diyl)diphenol                   Plasma.Bla…   1.74e-4
+ 200 4,4'-(9H-Fluorene-9,9-diyl)diphenol                   T0            1.25e-1
+ 201 4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline   PBS           8.12e-4
+ 202 4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline   Plasma        1.77e+0
+ 203 4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline   Plasma.Bla…   8.50e-4
+ 204 4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline   T0            1.67e+0
+ 205 4,4'-Bipyridine                                       PBS           2.55e-1
+ 206 4,4'-Bipyridine                                       Plasma        1.66e-1
+ 207 4,4'-Bipyridine                                       Plasma.Bla…   6.61e-3
+ 208 4,4'-Bipyridine                                       T0            3.38e-1
+ 209 4,4'-Methylenebis(2,6-diethylaniline)                 PBS           1.98e-2
+ 210 4,4'-Methylenebis(2,6-diethylaniline)                 Plasma        1.05e+0
+ 211 4,4'-Methylenebis(2,6-diethylaniline)                 Plasma.Bla…   2.28e-4
+ 212 4,4'-Methylenebis(2,6-diethylaniline)                 T0            1.31e+0
+ 213 4,4'-Sulfonyldiphenol                                 PBS           2.32e-1
+ 214 4,4'-Sulfonyldiphenol                                 Plasma        6.23e-1
+ 215 4,4'-Sulfonyldiphenol                                 Plasma.Bla…   3.95e-4
+ 216 4,4'-Sulfonyldiphenol                                 T0            7.92e-1
+ 217 4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)ph… PBS           1.86e-2
+ 218 4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)ph… Plasma        1.22e+1
+ 219 4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)ph… Plasma.Bla…   9.18e-2
+ 220 4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)ph… T0            1.86e+1
+ 221 4-Aminobenzoic acid                                   PBS           6.06e-2
+ 222 4-Aminobenzoic acid                                   Plasma        2.70e-2
+ 223 4-Aminobenzoic acid                                   Plasma.Bla…   2.75e-4
+ 224 4-Aminobenzoic acid                                   T0            5.85e-2
+ 225 4-Anilinophenol                                       PBS           1.30e-1
+ 226 4-Anilinophenol                                       Plasma        4.49e-1
+ 227 4-Anilinophenol                                       Plasma.Bla…   1.82e-5
+ 228 4-Anilinophenol                                       T0            5.48e-1
+ 229 4-Butylaniline                                        PBS           1.54e-2
+ 230 4-Butylaniline                                        Plasma        4.28e-2
+ 231 4-Butylaniline                                        Plasma.Bla…   7.37e-6
+ 232 4-Butylaniline                                        T0            7.43e-2
+ 233 4-Butyloxyaniline                                     PBS           1.75e-1
+ 234 4-Butyloxyaniline                                     Plasma        1.93e-1
+ 235 4-Butyloxyaniline                                     Plasma.Bla…   1.91e-5
+ 236 4-Butyloxyaniline                                     T0            3.28e-1
+ 237 4-Chloro-1,2-diaminobenzene                           PBS           4.05e-1
+ 238 4-Chloro-1,2-diaminobenzene                           Plasma        2.89e-1
+ 239 4-Chloro-1,2-diaminobenzene                           Plasma.Bla…   1.77e-3
+ 240 4-Chloro-1,2-diaminobenzene                           T0            4.75e-1
+ 241 4-Chloroanulline                                      PBS           4.41e-1
+ 242 4-Chloroanulline                                      Plasma        3.63e-1
+ 243 4-Chloroanulline                                      Plasma.Bla…   3.65e-5
+ 244 4-Chloroanulline                                      T0            7.64e-1
+ 245 4-Ethoxyaniline                                       PBS           4.71e-1
+ 246 4-Ethoxyaniline                                       Plasma        2.61e-1
+ 247 4-Ethoxyaniline                                       Plasma.Bla…   1.09e-3
+ 248 4-Ethoxyaniline                                       T0            5.93e-1
+ 249 4-Hexyloxyanilline                                    PBS           6.21e-2
+ 250 4-Hexyloxyanilline                                    Plasma        3.57e-1
+ 251 4-Hexyloxyanilline                                    Plasma.Bla…   1.92e-3
+ 252 4-Hexyloxyanilline                                    T0            5.02e-1
+ 253 4-Methylaniline                                       PBS           9.89e-2
+ 254 4-Methylaniline                                       Plasma        8.79e-2
+ 255 4-Methylaniline                                       Plasma.Bla…   1.04e-3
+ 256 4-Methylaniline                                       T0            3.25e-1
+ 257 4-Methylbenzophenone                                  PBS           1.39e-1
+ 258 4-Methylbenzophenone                                  Plasma        1.83e+0
+ 259 4-Methylbenzophenone                                  Plasma.Bla…   4.36e-3
+ 260 4-Methylbenzophenone                                  T0            3.47e+0
+ 261 4-Nitroaniline                                        PBS           2.29e+0
+ 262 4-Nitroaniline                                        Plasma        2.17e+0
+ 263 4-Nitroaniline                                        Plasma.Bla…   5.34e+0
+ 264 4-Nitroaniline                                        T0            3.07e+0
+ 265 4-Nitrophenol                                         PBS           6.32e-2
+ 266 4-Nitrophenol                                         Plasma        7.31e-2
+ 267 4-Nitrophenol                                         Plasma.Bla…   3.51e-4
+ 268 4-Nitrophenol                                         T0            1.05e-1
+ 269 4-Nitrosodiphenylamine                                PBS           2.82e-1
+ 270 4-Nitrosodiphenylamine                                Plasma        3.02e-1
+ 271 4-Nitrosodiphenylamine                                Plasma.Bla…   2.82e-2
+ 272 4-Nitrosodiphenylamine                                T0            4.06e+0
+ 273 4-Pentylaniline                                       PBS           6.29e-2
+ 274 4-Pentylaniline                                       Plasma        9.32e-1
+ 275 4-Pentylaniline                                       Plasma.Bla…   1.33e-3
+ 276 4-Pentylaniline                                       T0            1.77e+0
+ 277 4-Pentylanulline                                      PBS           9.60e-1
+ 278 4-Pentylanulline                                      Plasma        1.26e+1
+ 279 4-Pentylanulline                                      Plasma.Bla…   2.78e-2
+ 280 4-Pentylanulline                                      T0            2.00e+1
+ 281 4-Propylanilline                                      PBS           1.55e+0
+ 282 4-Propylanilline                                      Plasma        2.59e+0
+ 283 4-Propylanilline                                      Plasma.Bla…   6.43e-2
+ 284 4-Propylanilline                                      T0            5.06e+0
+ 285 4-tert-Butylaniline                                   PBS           1.85e-2
+ 286 4-tert-Butylaniline                                   Plasma        2.34e-2
+ 287 4-tert-Butylaniline                                   Plasma.Bla…   1.13e-6
+ 288 4-tert-Butylaniline                                   T0            4.51e-2
+ 289 5-Amino-2-methylphenol                                PBS           1.14e+0
+ 290 5-Amino-2-methylphenol                                Plasma        5.84e-1
+ 291 5-Amino-2-methylphenol                                Plasma.Bla…   2.88e-3
+ 292 5-Amino-2-methylphenol                                T0            1.25e+0
+ 293 5HPP-33                                               PBS           1.12e+0
+ 294 5HPP-33                                               Plasma        3.35e+0
+ 295 5HPP-33                                               Plasma.Bla…   6.14e-4
+ 296 5HPP-33                                               T0            3.73e+0
+ 297 6-Methylquinoline                                     PBS           4.90e+0
+ 298 6-Methylquinoline                                     Plasma        9.29e+0
+ 299 6-Methylquinoline                                     Plasma.Bla…   8.81e-1
+ 300 6-Methylquinoline                                     T0            1.60e+1
+ 301 6-Thioguanine                                         PBS           1.15e+1
+ 302 6-Thioguanine                                         Plasma        1.11e+0
+ 303 6-Thioguanine                                         Plasma.Bla…   1.80e-2
+ 304 6-Thioguanine                                         T0            3.03e+0
+ 305 Acetophenone                                          PBS           8.32e-1
+ 306 Acetophenone                                          Plasma        6.94e-1
+ 307 Acetophenone                                          Plasma.Bla…   0      
+ 308 Acetophenone                                          T0            9.07e-1
+ 309 Acetyl tributyl citrate                               PBS           3.61e-1
+ 310 Acetyl tributyl citrate                               Plasma        1.92e+1
+ 311 Acetyl tributyl citrate                               Plasma.Bla…   2.51e-2
+ 312 Acetyl tributyl citrate                               T0            3.25e+1
+ 313 Acibenzolar-S-methyl                                  PBS           1.02e-1
+ 314 Acibenzolar-S-methyl                                  Plasma        8.21e-1
+ 315 Acibenzolar-S-methyl                                  Plasma.Bla…   2.33e-3
+ 316 Acibenzolar-S-methyl                                  T0            1.02e+0
+ 317 Acifluorfen                                           PBS           6.58e-3
+ 318 Acifluorfen                                           Plasma        8.71e-2
+ 319 Acifluorfen                                           Plasma.Bla…   6.27e-6
+ 320 Acifluorfen                                           T0            8.69e-2
+ 321 Adriamycin hydrochloride                              PBS           4.76e-2
+ 322 Adriamycin hydrochloride                              Plasma        7.11e-2
+ 323 Adriamycin hydrochloride                              Plasma.Bla…   3.81e-6
+ 324 Adriamycin hydrochloride                              T0            1.53e-1
+ 325 Aldoxycarb                                            PBS           5.30e-2
+ 326 Aldoxycarb                                            Plasma        2.16e-2
+ 327 Aldoxycarb                                            Plasma.Bla…   2.09e-4
+ 328 Aldoxycarb                                            T0            5.80e-2
+ 329 Allura Red C.I.16035                                  PBS           1.14e-2
+ 330 Allura Red C.I.16035                                  Plasma        6.46e-1
+ 331 Allura Red C.I.16035                                  Plasma.Bla…   1.06e-3
+ 332 Allura Red C.I.16035                                  T0            1.13e+0
+ 333 Amiodarone hydrochloride                              PBS           2.15e-4
+ 334 Amiodarone hydrochloride                              Plasma        1.54e+0
+ 335 Amiodarone hydrochloride                              Plasma.Bla…   1.09e-4
+ 336 Amiodarone hydrochloride                              T0            2.10e+0
+ 337 Amitraz                                               PBS           4.00e-3
+ 338 Amitraz                                               Plasma        1.71e+1
+ 339 Amitraz                                               Plasma.Bla…   6.55e-4
+ 340 Amitraz                                               T0            2.61e+1
+ 341 Apigenin                                              PBS           1.42e-1
+ 342 Apigenin                                              Plasma        1.42e+1
+ 343 Apigenin                                              Plasma.Bla…   9.63e-2
+ 344 Apigenin                                              T0            1.62e+1
+ 345 Apomorphine hydrochloride hydrate                     PBS           2.10e-2
+ 346 Apomorphine hydrochloride hydrate                     Plasma        4.49e-2
+ 347 Apomorphine hydrochloride hydrate                     Plasma.Bla…   6.50e-4
+ 348 Apomorphine hydrochloride hydrate                     T0            1.09e-1
+ 349 Aspirin                                               PBS           1.67e-2
+ 350 Aspirin                                               Plasma        8.87e-3
+ 351 Aspirin                                               Plasma.Bla…   5.54e-4
+ 352 Aspirin                                               T0            1.05e-2
+ 353 Auramine hydrochloride                                PBS           8.46e-2
+ 354 Auramine hydrochloride                                Plasma        1.52e-1
+ 355 Auramine hydrochloride                                Plasma.Bla…   4.35e-5
+ 356 Auramine hydrochloride                                T0            2.38e-1
+ 357 Azathioprine                                          PBS           1.51e+0
+ 358 Azathioprine                                          Plasma        1.05e+0
+ 359 Azathioprine                                          Plasma.Bla…   3.12e-4
+ 360 Azathioprine                                          T0            2.13e+0
+ 361 Azobenzene                                            PBS           2.45e-1
+ 362 Azobenzene                                            Plasma        2.08e-1
+ 363 Azobenzene                                            Plasma.Bla…   6.67e-1
+ 364 Azobenzene                                            T0            8.33e-1
+ 365 Benomyl                                               PBS           2.16e-3
+ 366 Benomyl                                               Plasma        3.00e-3
+ 367 Benomyl                                               Plasma.Bla…   3.13e-4
+ 368 Benomyl                                               T0            2.44e+0
+ 369 Bensulfuron-methyl                                    PBS           1.85e-2
+ 370 Bensulfuron-methyl                                    Plasma        4.55e-1
+ 371 Bensulfuron-methyl                                    Plasma.Bla…   1.11e-6
+ 372 Bensulfuron-methyl                                    T0            4.73e-1
+ 373 Benzal chloride                                       PBS           0      
+ 374 Benzal chloride                                       Plasma        3.19e-2
+ 375 Benzal chloride                                       Plasma.Bla…   0      
+ 376 Benzal chloride                                       T0            6.98e-1
+ 377 Benzocaine                                            PBS           1.28e+0
+ 378 Benzocaine                                            Plasma        1.00e+0
+ 379 Benzocaine                                            Plasma.Bla…   2.07e-4
+ 380 Benzocaine                                            T0            1.95e+0
+ 381 Benzyl butyl phthalate                                PBS           1.52e-2
+ 382 Benzyl butyl phthalate                                Plasma        2.29e-2
+ 383 Benzyl butyl phthalate                                Plasma.Bla…   1.25e-1
+ 384 Benzyl butyl phthalate                                T0            1.29e+0
+ 385 Benzylparaben                                         PBS           4.19e-3
+ 386 Benzylparaben                                         Plasma        1.19e-1
+ 387 Benzylparaben                                         Plasma.Bla…   9.39e-4
+ 388 Benzylparaben                                         T0            1.31e-1
+ 389 Besonprodil                                           PBS           9.85e+0
+ 390 Besonprodil                                           Plasma        3.40e+1
+ 391 Besonprodil                                           Plasma.Bla…   2.34e-2
+ 392 Besonprodil                                           T0            4.20e+1
+ 393 Bicalutamide                                          PBS           1.14e+1
+ 394 Bicalutamide                                          Plasma        4.89e+1
+ 395 Bicalutamide                                          Plasma.Bla…   2.97e-3
+ 396 Bicalutamide                                          T0            6.07e+1
+ 397 BisOPP-A                                              PBS           8.06e-1
+ 398 BisOPP-A                                              Plasma        7.47e-1
+ 399 BisOPP-A                                              Plasma.Bla…   9.08e-1
+ 400 BisOPP-A                                              T0            1.18e+0
+ 401 Bisdemethoxycurcumin                                  PBS           1.01e-4
+ 402 Bisdemethoxycurcumin                                  Plasma        3.79e-1
+ 403 Bisdemethoxycurcumin                                  Plasma.Bla…   2.56e-4
+ 404 Bisdemethoxycurcumin                                  T0            5.97e-1
+ 405 Bisphenol AF                                          PBS           4.14e-1
+ 406 Bisphenol AF                                          Plasma        1.68e+1
+ 407 Bisphenol AF                                          Plasma.Bla…   1.45e-3
+ 408 Bisphenol AF                                          T0            1.97e+1
+ 409 Bisphenol F                                           PBS           6.20e-2
+ 410 Bisphenol F                                           Plasma        1.94e-1
+ 411 Bisphenol F                                           Plasma.Bla…   5.78e-5
+ 412 Bisphenol F                                           T0            2.25e-1
+ 413 Bispyribac-sodium                                     PBS           8.95e-1
+ 414 Bispyribac-sodium                                     Plasma        1.37e+1
+ 415 Bispyribac-sodium                                     Plasma.Bla…   4.09e-3
+ 416 Bispyribac-sodium                                     T0            1.27e+1
+ 417 Bromcresol green                                      PBS           8.66e-4
+ 418 Bromcresol green                                      Plasma        1.01e-1
+ 419 Bromcresol green                                      Plasma.Bla…   3.09e-5
+ 420 Bromcresol green                                      T0            9.98e-2
+ 421 Bromocresol green sodium salt                         PBS           8.48e-4
+ 422 Bromocresol green sodium salt                         Plasma        1.27e-1
+ 423 Bromocresol green sodium salt                         Plasma.Bla…   1.68e-4
+ 424 Bromocresol green sodium salt                         T0            1.34e-1
+ 425 Bromocriptine mesylate                                PBS           3.34e-1
+ 426 Bromocriptine mesylate                                Plasma        8.59e+0
+ 427 Bromocriptine mesylate                                Plasma.Bla…   3.31e-4
+ 428 Bromocriptine mesylate                                T0            1.08e+1
+ 429 Butyl benzoate                                        PBS           1.18e-2
+ 430 Butyl benzoate                                        Plasma        1.42e-2
+ 431 Butyl benzoate                                        Plasma.Bla…   0      
+ 432 Butyl benzoate                                        T0            4.99e-1
+ 433 C.I. Basic Red 9 monohydrochloride                    PBS           1.02e+1
+ 434 C.I. Basic Red 9 monohydrochloride                    Plasma        1.11e+1
+ 435 C.I. Basic Red 9 monohydrochloride                    Plasma.Bla…   1.72e+0
+ 436 C.I. Basic Red 9 monohydrochloride                    T0            2.24e+1
+ 437 C.I. Disperse Orange 37                               PBS           5.82e-3
+ 438 C.I. Disperse Orange 37                               Plasma        2.41e+0
+ 439 C.I. Disperse Orange 37                               Plasma.Bla…   1.23e-3
+ 440 C.I. Disperse Orange 37                               T0            2.44e+0
+ 441 C.I. Solvent Orange 7                                 PBS           4.61e-4
+ 442 C.I. Solvent Orange 7                                 Plasma        5.33e-1
+ 443 C.I. Solvent Orange 7                                 Plasma.Bla…   2.89e-4
+ 444 C.I. Solvent Orange 7                                 T0            7.24e-1
+ 445 C.I. Solvent Red 49                                   PBS           7.64e+0
+ 446 C.I. Solvent Red 49                                   Plasma        1.98e+1
+ 447 C.I. Solvent Red 49                                   Plasma.Bla…   1.08e-3
+ 448 C.I. Solvent Red 49                                   T0            2.65e+1
+ 449 C.I. Solvent Yellow 14                                PBS           5.52e-3
+ 450 C.I. Solvent Yellow 14                                Plasma        1.72e+0
+ 451 C.I. Solvent Yellow 14                                Plasma.Bla…   1.98e-3
+ 452 C.I. Solvent Yellow 14                                T0            2.17e+0
+ 453 CI-1044                                               PBS           2.14e+0
+ 454 CI-1044                                               Plasma        2.77e+0
+ 455 CI-1044                                               Plasma.Bla…   1.61e-5
+ 456 CI-1044                                               T0            5.72e+0
+ 457 CP-544439                                             PBS           9.05e-1
+ 458 CP-544439                                             Plasma        1.38e+0
+ 459 CP-544439                                             Plasma.Bla…   5.05e-4
+ 460 CP-544439                                             T0            1.99e+0
+ 461 CP-634384                                             PBS           1.55e-2
+ 462 CP-634384                                             Plasma        3.48e-1
+ 463 CP-634384                                             Plasma.Bla…   7.52e-5
+ 464 CP-634384                                             T0            3.17e-1
+ 465 CP-671305                                             PBS           8.42e-2
+ 466 CP-671305                                             Plasma        3.56e-1
+ 467 CP-671305                                             Plasma.Bla…   6.83e-4
+ 468 CP-671305                                             T0            3.81e-1
+ 469 Carabersat                                            PBS           5.25e+1
+ 470 Carabersat                                            Plasma        5.68e+1
+ 471 Carabersat                                            Plasma.Bla…   9.87e-3
+ 472 Carabersat                                            T0            8.55e+1
+ 473 Cariporide mesylate                                   PBS           6.45e+1
+ 474 Cariporide mesylate                                   Plasma        3.98e+1
+ 475 Cariporide mesylate                                   Plasma.Bla…   1.57e-2
+ 476 Cariporide mesylate                                   T0            6.64e+1
+ 477 Carminic acid                                         PBS           3.74e-3
+ 478 Carminic acid                                         Plasma        2.03e-2
+ 479 Carminic acid                                         Plasma.Bla…   4.28e-3
+ 480 Carminic acid                                         T0            1.96e-2
+ 481 Catechol                                              PBS           1.10e-1
+ 482 Catechol                                              Plasma        2.05e-1
+ 483 Catechol                                              Plasma.Bla…   6.51e-2
+ 484 Catechol                                              T0            3.87e-1
+ 485 Chlorhexidine diacetate                               PBS           4.58e-5
+ 486 Chlorhexidine diacetate                               Plasma        6.01e-3
+ 487 Chlorhexidine diacetate                               Plasma.Bla…   3.55e-6
+ 488 Chlorhexidine diacetate                               T0            4.87e-3
+ 489 Chlorophacinone                                       PBS           1.19e-3
+ 490 Chlorophacinone                                       Plasma        2.74e-1
+ 491 Chlorophacinone                                       Plasma.Bla…   5.04e-3
+ 492 Chlorophacinone                                       T0            2.87e-1
+ 493 Chlorotrianisene                                      PBS           1.42e-5
+ 494 Chlorotrianisene                                      Plasma        1.96e-2
+ 495 Chlorotrianisene                                      Plasma.Bla…   4.89e-6
+ 496 Chlorotrianisene                                      T0            2.49e-2
+ 497 Chlorpromazine hydrochloride                          PBS           5.60e-1
+ 498 Chlorpromazine hydrochloride                          Plasma        3.64e+0
+ 499 Chlorpromazine hydrochloride                          Plasma.Bla…   4.36e-4
+ 500 Chlorpromazine hydrochloride                          T0            4.47e+0
+ 501 Chlorpropham                                          PBS           1.56e-2
+ 502 Chlorpropham                                          Plasma        1.57e-2
+ 503 Chlorpropham                                          Plasma.Bla…   1.21e-2
+ 504 Chlorpropham                                          T0            1.57e-2
+ 505 Chrysin                                               PBS           2.74e-2
+ 506 Chrysin                                               Plasma        1.75e+0
+ 507 Chrysin                                               Plasma.Bla…   1.17e-1
+ 508 Chrysin                                               T0            1.97e+0
+ 509 Clodinafop-propargyl                                  PBS           1.95e-1
+ 510 Clodinafop-propargyl                                  Plasma        7.74e+0
+ 511 Clodinafop-propargyl                                  Plasma.Bla…   1.84e-3
+ 512 Clodinafop-propargyl                                  T0            2.08e+1
+ 513 Clomipramine hydrochloride                            PBS           9.62e-1
+ 514 Clomipramine hydrochloride                            Plasma        4.05e+0
+ 515 Clomipramine hydrochloride                            Plasma.Bla…   2.31e-3
+ 516 Clomipramine hydrochloride                            T0            6.27e+0
+ 517 Cloquintocet-mexyl                                    PBS           2.91e-2
+ 518 Cloquintocet-mexyl                                    Plasma        1.16e+1
+ 519 Cloquintocet-mexyl                                    Plasma.Bla…   4.94e-3
+ 520 Cloquintocet-mexyl                                    T0            1.59e+1
+ 521 Clorophene                                            PBS           2.09e+1
+ 522 Clorophene                                            Plasma        1.68e+1
+ 523 Clorophene                                            Plasma.Bla…   1.17e+1
+ 524 Clorophene                                            T0            2.57e+1
+ 525 Clotrimazole                                          PBS           1.51e-1
+ 526 Clotrimazole                                          Plasma        2.35e+0
+ 527 Clotrimazole                                          Plasma.Bla…   9.40e-5
+ 528 Clotrimazole                                          T0            2.44e+0
+ 529 Corticosterone                                        PBS           8.02e-2
+ 530 Corticosterone                                        Plasma        1.08e-1
+ 531 Corticosterone                                        Plasma.Bla…   1.75e-3
+ 532 Corticosterone                                        T0            1.64e-1
+ 533 Cotinine                                              PBS           5.97e-1
+ 534 Cotinine                                              Plasma        7.15e-1
+ 535 Cotinine                                              Plasma.Bla…   6.41e-1
+ 536 Cotinine                                              T0            8.99e-1
+ 537 Coumaphos                                             PBS           1.31e-2
+ 538 Coumaphos                                             Plasma        4.15e-1
+ 539 Coumaphos                                             Plasma.Bla…   6.43e-4
+ 540 Coumaphos                                             T0            4.48e-1
+ 541 Curcumin                                              PBS           1.81e-3
+ 542 Curcumin                                              Plasma        4.28e+0
+ 543 Curcumin                                              Plasma.Bla…   2.20e-3
+ 544 Curcumin                                              T0            9.91e+0
+ 545 Cyclopamine                                           PBS           5.14e-1
+ 546 Cyclopamine                                           Plasma        9.92e-1
+ 547 Cyclopamine                                           Plasma.Bla…   6.37e-4
+ 548 Cyclopamine                                           T0            1.28e+0
+ 549 Cyclophosphamide monohydrate                          PBS           6.12e-2
+ 550 Cyclophosphamide monohydrate                          Plasma        2.94e-2
+ 551 Cyclophosphamide monohydrate                          Plasma.Bla…   1.60e-3
+ 552 Cyclophosphamide monohydrate                          T0            7.76e-2
+ 553 Cymoxanil                                             PBS           1.82e-1
+ 554 Cymoxanil                                             Plasma        1.08e-1
+ 555 Cymoxanil                                             Plasma.Bla…   6.92e-4
+ 556 Cymoxanil                                             T0            6.64e-1
+ 557 Cyproterone acetate                                   PBS           2.08e+0
+ 558 Cyproterone acetate                                   Plasma        6.98e+0
+ 559 Cyproterone acetate                                   Plasma.Bla…   1.86e-2
+ 560 Cyproterone acetate                                   T0            8.15e+0
+ 561 Cytarabine hydrochloride                              PBS           2.02e-1
+ 562 Cytarabine hydrochloride                              Plasma        6.25e-2
+ 563 Cytarabine hydrochloride                              Plasma.Bla…   6.98e-4
+ 564 Cytarabine hydrochloride                              T0            1.62e-1
+ 565 Daidzein                                              PBS           9.27e-1
+ 566 Daidzein                                              Plasma        3.00e+0
+ 567 Daidzein                                              Plasma.Bla…   3.93e-2
+ 568 Daidzein                                              T0            3.86e+0
+ 569 Dapsone                                               PBS           1.38e-1
+ 570 Dapsone                                               Plasma        1.33e-1
+ 571 Dapsone                                               Plasma.Bla…   2.78e-5
+ 572 Dapsone                                               T0            3.12e-1
+ 573 Deethylatrazine                                       PBS           9.32e+1
+ 574 Deethylatrazine                                       Plasma        5.02e+1
+ 575 Deethylatrazine                                       Plasma.Bla…  -5.78e-2
+ 576 Deethylatrazine                                       T0            1.23e+2
+ 577 Dexamethasone sodium phosphate                        PBS           4.72e-1
+ 578 Dexamethasone sodium phosphate                        Plasma        1.21e+0
+ 579 Dexamethasone sodium phosphate                        Plasma.Bla…   2.43e-3
+ 580 Dexamethasone sodium phosphate                        T0            1.63e+0
+ 581 Dibutyl decanedioate                                  PBS           0      
+ 582 Dibutyl decanedioate                                  Plasma        6.91e-3
+ 583 Dibutyl decanedioate                                  Plasma.Bla…   0      
+ 584 Dibutyl decanedioate                                  T0            7.63e-2
+ 585 Dichlorophen                                          PBS           6.50e-3
+ 586 Dichlorophen                                          Plasma        3.65e-1
+ 587 Dichlorophen                                          Plasma.Bla…   6.52e-5
+ 588 Dichlorophen                                          T0            3.64e-1
+ 589 Diclofenac sodium                                     PBS           5.87e+0
+ 590 Diclofenac sodium                                     Plasma        7.74e+0
+ 591 Diclofenac sodium                                     Plasma.Bla…   4.29e+0
+ 592 Diclofenac sodium                                     T0            7.77e+0
+ 593 Diflubenzuron                                         PBS           3.83e-1
+ 594 Diflubenzuron                                         Plasma        3.61e+0
+ 595 Diflubenzuron                                         Plasma.Bla…   2.94e-4
+ 596 Diflubenzuron                                         T0            3.50e+0
+ 597 Diisobutyl phthalate                                  PBS           1.62e-1
+ 598 Diisobutyl phthalate                                  Plasma        3.42e-1
+ 599 Diisobutyl phthalate                                  Plasma.Bla…   1.09e-1
+ 600 Diisobutyl phthalate                                  T0            2.45e+0
+ 601 Dimethipin                                            PBS           3.69e-1
+ 602 Dimethipin                                            Plasma        1.20e-1
+ 603 Dimethipin                                            Plasma.Bla…   0      
+ 604 Dimethipin                                            T0            3.22e-1
+ 605 Dipentyl phthalate                                    PBS           9.56e-2
+ 606 Dipentyl phthalate                                    Plasma        1.19e+0
+ 607 Dipentyl phthalate                                    Plasma.Bla…   1.16e-1
+ 608 Dipentyl phthalate                                    T0            1.55e+1
+ 609 Diphenamid                                            PBS           4.95e+2
+ 610 Diphenamid                                            Plasma        4.43e+2
+ 611 Diphenamid                                            Plasma.Bla…   3.53e-3
+ 612 Diphenamid                                            T0            6.09e+2
+ 613 Diphenolic acid                                       PBS           7.57e-3
+ 614 Diphenolic acid                                       Plasma        1.16e-2
+ 615 Diphenolic acid                                       Plasma.Bla…   1.93e-5
+ 616 Diphenolic acid                                       T0            1.73e-2
+ 617 Diphenyl phthalate                                    PBS           2.24e-4
+ 618 Diphenyl phthalate                                    Plasma        3.39e-4
+ 619 Diphenyl phthalate                                    Plasma.Bla…   1.11e-3
+ 620 Diphenyl phthalate                                    T0            8.94e-2
+ 621 Dipropyl 2,5-pyridinedicarboxylate                    PBS           1.32e+0
+ 622 Dipropyl 2,5-pyridinedicarboxylate                    Plasma        3.86e-2
+ 623 Dipropyl 2,5-pyridinedicarboxylate                    Plasma.Bla…   2.25e-3
+ 624 Dipropyl 2,5-pyridinedicarboxylate                    T0            4.94e+1
+ 625 Disulfoton                                            PBS           3.43e-4
+ 626 Disulfoton                                            Plasma        5.99e-4
+ 627 Disulfoton                                            Plasma.Bla…   3.08e-4
+ 628 Disulfoton                                            T0            3.33e-4
+ 629 Dodecyltrimethylammonium chloride                     PBS           1.06e-1
+ 630 Dodecyltrimethylammonium chloride                     Plasma        3.88e-1
+ 631 Dodecyltrimethylammonium chloride                     Plasma.Bla…   8.65e-3
+ 632 Dodecyltrimethylammonium chloride                     T0            6.27e-1
+ 633 Econazole nitrate                                     PBS           5.99e-3
+ 634 Econazole nitrate                                     Plasma        6.37e-1
+ 635 Econazole nitrate                                     Plasma.Bla…   2.67e-4
+ 636 Econazole nitrate                                     T0            6.25e-1
+ 637 Elzasonan                                             PBS           5.11e-1
+ 638 Elzasonan                                             Plasma        2.87e+0
+ 639 Elzasonan                                             Plasma.Bla…   3.75e-2
+ 640 Elzasonan                                             T0            3.27e+0
+ 641 Enadoline                                             PBS           1.36e+2
+ 642 Enadoline                                             Plasma        1.14e+2
+ 643 Enadoline                                             Plasma.Bla…   6.89e-2
+ 644 Enadoline                                             T0            2.18e+2
+ 645 Enterolactone                                         PBS           4.62e-2
+ 646 Enterolactone                                         Plasma        1.39e-1
+ 647 Enterolactone                                         Plasma.Bla…   2.65e-3
+ 648 Enterolactone                                         T0            1.68e-1
+ 649 Eosin                                                 PBS           2.99e-4
+ 650 Eosin                                                 Plasma        4.06e-3
+ 651 Eosin                                                 Plasma.Bla…   6.73e-4
+ 652 Eosin                                                 T0            4.56e-3
+ 653 Epoxiconazole                                         PBS           5.30e-1
+ 654 Epoxiconazole                                         Plasma        1.61e+0
+ 655 Epoxiconazole                                         Plasma.Bla…   8.41e-3
+ 656 Epoxiconazole                                         T0            2.27e+0
+ 657 Ethion                                                PBS           4.28e-5
+ 658 Ethion                                                Plasma        2.46e-2
+ 659 Ethion                                                Plasma.Bla…   7.96e-5
+ 660 Ethion                                                T0            2.96e-2
+ 661 Exifone                                               PBS           2.65e-3
+ 662 Exifone                                               Plasma        5.38e-3
+ 663 Exifone                                               Plasma.Bla…   3.61e-3
+ 664 Exifone                                               T0            3.62e-3
+ 665 FD&C Green No. 3                                      PBS           9.38e-4
+ 666 FD&C Green No. 3                                      Plasma        6.92e-3
+ 667 FD&C Green No. 3                                      Plasma.Bla…   6.09e-5
+ 668 FD&C Green No. 3                                      T0            7.52e-3
+ 669 FD&C Yellow 6                                         PBS           2.46e-2
+ 670 FD&C Yellow 6                                         Plasma        2.18e-1
+ 671 FD&C Yellow 6                                         Plasma.Bla…   1.51e-1
+ 672 FD&C Yellow 6                                         T0            2.46e-1
+ 673 FR900409                                              PBS           1.93e-3
+ 674 FR900409                                              Plasma        1.04e-2
+ 675 FR900409                                              Plasma.Bla…   1.63e+0
+ 676 FR900409                                              T0            1.01e-1
+ 677 Fabesetron hydrochloride                              PBS           1.06e-1
+ 678 Fabesetron hydrochloride                              Plasma        5.75e-1
+ 679 Fabesetron hydrochloride                              Plasma.Bla…   2.43e-4
+ 680 Fabesetron hydrochloride                              T0            6.99e-1
+ 681 Famoxadone                                            PBS           1.91e-1
+ 682 Famoxadone                                            Plasma        1.28e+1
+ 683 Famoxadone                                            Plasma.Bla…   5.00e-2
+ 684 Famoxadone                                            T0            1.65e+1
+ 685 Fenofibrate                                           PBS           3.64e-3
+ 686 Fenofibrate                                           Plasma        1.64e+0
+ 687 Fenofibrate                                           Plasma.Bla…   6.40e-4
+ 688 Fenofibrate                                           T0            1.62e+0
+ 689 Fenoxaprop-(2S)-ethyl                                 PBS           7.90e-1
+ 690 Fenoxaprop-(2S)-ethyl                                 Plasma        1.24e+2
+ 691 Fenoxaprop-(2S)-ethyl                                 Plasma.Bla…   1.10e-2
+ 692 Fenoxaprop-(2S)-ethyl                                 T0            1.43e+2
+ 693 Fenpyroximate (Z,E)                                   PBS           3.38e-1
+ 694 Fenpyroximate (Z,E)                                   Plasma        3.92e+2
+ 695 Fenpyroximate (Z,E)                                   Plasma.Bla…   3.96e-3
+ 696 Fenpyroximate (Z,E)                                   T0            3.71e+2
+ 697 Fenuron                                               PBS           5.89e-1
+ 698 Fenuron                                               Plasma        2.96e-1
+ 699 Fenuron                                               Plasma.Bla…   3.27e-5
+ 700 Fenuron                                               T0            6.79e-1
+ 701 Fluazifop-butyl                                       PBS           1.72e-2
+ 702 Fluazifop-butyl                                       Plasma        6.75e+0
+ 703 Fluazifop-butyl                                       Plasma.Bla…   3.07e-3
+ 704 Fluazifop-butyl                                       T0            1.21e+1
+ 705 Flufenpyr-ethyl                                       PBS           4.71e-1
+ 706 Flufenpyr-ethyl                                       Plasma        3.99e-2
+ 707 Flufenpyr-ethyl                                       Plasma.Bla…   8.22e-2
+ 708 Flufenpyr-ethyl                                       T0            2.50e+1
+ 709 Fluorescein                                           PBS           5.01e-2
+ 710 Fluorescein                                           Plasma        8.18e-2
+ 711 Fluorescein                                           Plasma.Bla…   2.64e-6
+ 712 Fluorescein                                           T0            1.08e-1
+ 713 Folic acid                                            PBS           1.92e-2
+ 714 Folic acid                                            Plasma        1.99e-2
+ 715 Folic acid                                            Plasma.Bla…   6.53e-3
+ 716 Folic acid                                            T0            8.47e-2
+ 717 Fomesafen                                             PBS           3.59e+0
+ 718 Fomesafen                                             Plasma        5.09e+0
+ 719 Fomesafen                                             Plasma.Bla…   7.02e-2
+ 720 Fomesafen                                             T0            6.06e+0
+ 721 Geranyl acetate                                       PBS           9.43e-2
+ 722 Geranyl acetate                                       Plasma        1.07e-1
+ 723 Geranyl acetate                                       Plasma.Bla…   0      
+ 724 Geranyl acetate                                       T0            1.92e-1
+ 725 Haloxyfop-methyl                                      PBS           4.23e-2
+ 726 Haloxyfop-methyl                                      Plasma        1.59e+0
+ 727 Haloxyfop-methyl                                      Plasma.Bla…   1.19e-4
+ 728 Haloxyfop-methyl                                      T0            2.22e+0
+ 729 Hexachlorophene                                       PBS           6.11e-4
+ 730 Hexachlorophene                                       Plasma        3.95e+0
+ 731 Hexachlorophene                                       Plasma.Bla…   6.08e-4
+ 732 Hexachlorophene                                       T0            3.74e+0
+ 733 Hydramethylnon                                        PBS           5.02e-3
+ 734 Hydramethylnon                                        Plasma        7.57e+0
+ 735 Hydramethylnon                                        Plasma.Bla…   5.15e-3
+ 736 Hydramethylnon                                        T0            7.71e+0
+ 737 Hydrochlorothiazide                                   PBS           2.21e-1
+ 738 Hydrochlorothiazide                                   Plasma        1.51e-1
+ 739 Hydrochlorothiazide                                   Plasma.Bla…   3.66e-3
+ 740 Hydrochlorothiazide                                   T0            3.25e-1
+ 741 Hydroxyflutamide                                      PBS           4.51e+1
+ 742 Hydroxyflutamide                                      Plasma        4.53e+1
+ 743 Hydroxyflutamide                                      Plasma.Bla…   2.24e-3
+ 744 Hydroxyflutamide                                      T0            6.97e+1
+ 745 Hydroxyprogesterone caproate                          PBS           2.43e-1
+ 746 Hydroxyprogesterone caproate                          Plasma        1.51e+1
+ 747 Hydroxyprogesterone caproate                          Plasma.Bla…   4.61e-3
+ 748 Hydroxyprogesterone caproate                          T0            1.74e+1
+ 749 Hydroxyurea                                           PBS           8.51e-2
+ 750 Hydroxyurea                                           Plasma        1.70e-1
+ 751 Hydroxyurea                                           Plasma.Bla…   1.35e-1
+ 752 Hydroxyurea                                           T0            1.80e-1
+ 753 Ilepatril                                             PBS           2.15e+0
+ 754 Ilepatril                                             Plasma        1.84e+0
+ 755 Ilepatril                                             Plasma.Bla…   3.36e-3
+ 756 Ilepatril                                             T0            5.52e+0
+ 757 Indomethacin                                          PBS           5.96e-2
+ 758 Indomethacin                                          Plasma        1.47e+0
+ 759 Indomethacin                                          Plasma.Bla…   2.39e-4
+ 760 Indomethacin                                          T0            1.40e+0
+ 761 Ingliforib                                            PBS           1.42e+0
+ 762 Ingliforib                                            Plasma        7.70e+0
+ 763 Ingliforib                                            Plasma.Bla…   4.49e-2
+ 764 Ingliforib                                            T0            9.69e+0
+ 765 Ipconazole                                            PBS           6.70e+0
+ 766 Ipconazole                                            Plasma        7.99e+1
+ 767 Ipconazole                                            Plasma.Bla…   1.65e-1
+ 768 Ipconazole                                            T0            8.95e+1
+ 769 Isofenphos                                            PBS           7.09e-2
+ 770 Isofenphos                                            Plasma        2.17e+0
+ 771 Isofenphos                                            Plasma.Bla…   6.42e-4
+ 772 Isofenphos                                            T0            2.63e+0
+ 773 Isopropalin                                           PBS           8.79e-5
+ 774 Isopropalin                                           Plasma        3.08e-1
+ 775 Isopropalin                                           Plasma.Bla…   1.02e-5
+ 776 Isopropalin                                           T0            3.69e-1
+ 777 Isoproterenol hydrochloride                           PBS           2.91e-2
+ 778 Isoproterenol hydrochloride                           Plasma        2.15e-2
+ 779 Isoproterenol hydrochloride                           Plasma.Bla…   3.45e-4
+ 780 Isoproterenol hydrochloride                           T0            1.10e-1
+ 781 Isoproturon                                           PBS           1.33e+2
+ 782 Isoproturon                                           Plasma        1.14e+2
+ 783 Isoproturon                                           Plasma.Bla…   2.95e-3
+ 784 Isoproturon                                           T0            2.06e+2
+ 785 Laurocapram                                           PBS           1.26e-4
+ 786 Laurocapram                                           Plasma        8.86e-1
+ 787 Laurocapram                                           Plasma.Bla…   7.76e-7
+ 788 Laurocapram                                           T0            9.73e-1
+ 789 Lauryl gallate                                        PBS           2.76e-4
+ 790 Lauryl gallate                                        Plasma        2.47e-2
+ 791 Lauryl gallate                                        Plasma.Bla…   3.06e-4
+ 792 Lauryl gallate                                        T0            3.97e-2
+ 793 Leucomalachite green                                  PBS           2.47e-4
+ 794 Leucomalachite green                                  Plasma        2.27e-1
+ 795 Leucomalachite green                                  Plasma.Bla…   3.79e-4
+ 796 Leucomalachite green                                  T0            2.33e-1
+ 797 Levothyroxine                                         PBS           4.29e-1
+ 798 Levothyroxine                                         Plasma        1.23e+1
+ 799 Levothyroxine                                         Plasma.Bla…   5.99e-1
+ 800 Levothyroxine                                         T0            1.56e+1
+ 801 Loratadine                                            PBS           4.56e-2
+ 802 Loratadine                                            Plasma        1.59e+0
+ 803 Loratadine                                            Plasma.Bla…   2.70e-3
+ 804 Loratadine                                            T0            2.00e+0
+ 805 MEHP                                                  PBS           8.46e-1
+ 806 MEHP                                                  Plasma        9.21e-1
+ 807 MEHP                                                  Plasma.Bla…   8.62e-1
+ 808 MEHP                                                  T0            9.06e-1
+ 809 Malathion                                             PBS           9.34e-3
+ 810 Malathion                                             Plasma        1.10e-2
+ 811 Malathion                                             Plasma.Bla…   9.47e-5
+ 812 Malathion                                             T0            3.17e-2
+ 813 Melatonin                                             PBS           6.43e-1
+ 814 Melatonin                                             Plasma        3.67e-1
+ 815 Melatonin                                             Plasma.Bla…   4.05e-4
+ 816 Melatonin                                             T0            8.89e-1
+ 817 Melengestrol acetate                                  PBS           5.64e+0
+ 818 Melengestrol acetate                                  Plasma        2.24e+1
+ 819 Melengestrol acetate                                  Plasma.Bla…   3.24e-3
+ 820 Melengestrol acetate                                  T0            2.80e+1
+ 821 Metamitron                                            PBS           2.61e+1
+ 822 Metamitron                                            Plasma        1.17e+1
+ 823 Metamitron                                            Plasma.Bla…   7.41e-3
+ 824 Metamitron                                            T0            3.23e+1
+ 825 Methenamine                                           PBS           7.50e-1
+ 826 Methenamine                                           Plasma        1.12e+0
+ 827 Methenamine                                           Plasma.Bla…   2.13e-3
+ 828 Methenamine                                           T0            1.48e+0
+ 829 Methotrexate                                          PBS           5.77e+0
+ 830 Methotrexate                                          Plasma        3.66e+0
+ 831 Methotrexate                                          Plasma.Bla…   2.57e-4
+ 832 Methotrexate                                          T0            4.84e+0
+ 833 Methyl 2,4-dihydroxy-3,6-dimethylbenzoate             PBS           1.01e-1
+ 834 Methyl 2,4-dihydroxy-3,6-dimethylbenzoate             Plasma        4.53e-1
+ 835 Methyl 2,4-dihydroxy-3,6-dimethylbenzoate             Plasma.Bla…   5.47e-4
+ 836 Methyl 2,4-dihydroxy-3,6-dimethylbenzoate             T0            5.43e-1
+ 837 Methyl 2-aminobenzoate                                PBS           1.23e+0
+ 838 Methyl 2-aminobenzoate                                Plasma        1.58e+0
+ 839 Methyl 2-aminobenzoate                                Plasma.Bla…   2.19e-3
+ 840 Methyl 2-aminobenzoate                                T0            3.04e+0
+ 841 Methyl red                                            PBS           4.66e+1
+ 842 Methyl red                                            Plasma        1.81e+2
+ 843 Methyl red                                            Plasma.Bla…   2.96e-2
+ 844 Methyl red                                            T0            2.03e+2
+ 845 Methylene blue                                        PBS           7.07e-2
+ 846 Methylene blue                                        Plasma        5.07e-2
+ 847 Methylene blue                                        Plasma.Bla…   3.14e-6
+ 848 Methylene blue                                        T0            1.22e-1
+ 849 Michler's ketone                                      PBS           9.99e-2
+ 850 Michler's ketone                                      Plasma        1.83e+0
+ 851 Michler's ketone                                      Plasma.Bla…   2.12e-4
+ 852 Michler's ketone                                      T0            2.05e+0
+ 853 Mifepristone                                          PBS           3.51e-1
+ 854 Mifepristone                                          Plasma        2.91e+0
+ 855 Mifepristone                                          Plasma.Bla…   2.60e-4
+ 856 Mifepristone                                          T0            3.22e+0
+ 857 Minocycline hydrochloride                             PBS           3.95e-2
+ 858 Minocycline hydrochloride                             Plasma        3.71e-2
+ 859 Minocycline hydrochloride                             Plasma.Bla…   8.64e-4
+ 860 Minocycline hydrochloride                             T0            6.26e-2
+ 861 Monolinuron                                           PBS           3.48e+1
+ 862 Monolinuron                                           Plasma        3.39e+1
+ 863 Monolinuron                                           Plasma.Bla…   4.36e-3
+ 864 Monolinuron                                           T0            6.22e+1
+ 865 Monomethyl phthalate                                  PBS           1.59e-1
+ 866 Monomethyl phthalate                                  Plasma        9.23e-2
+ 867 Monomethyl phthalate                                  Plasma.Bla…   2.27e-5
+ 868 Monomethyl phthalate                                  T0            1.59e-1
+ 869 Morin hydrate                                         PBS           1.43e-2
+ 870 Morin hydrate                                         Plasma        6.41e-2
+ 871 Morin hydrate                                         Plasma.Bla…   9.78e-3
+ 872 Morin hydrate                                         T0            1.04e-1
+ 873 N,N-Dimethyldodecan-1-amine                           PBS           1.55e+0
+ 874 N,N-Dimethyldodecan-1-amine                           Plasma        6.57e+1
+ 875 N,N-Dimethyldodecan-1-amine                           Plasma.Bla…   5.23e-1
+ 876 N,N-Dimethyldodecan-1-amine                           T0            9.92e+1
+ 877 N-Benzyladenine                                       PBS           1.64e+2
+ 878 N-Benzyladenine                                       Plasma        2.36e+2
+ 879 N-Benzyladenine                                       Plasma.Bla…   4.88e-3
+ 880 N-Benzyladenine                                       T0            2.88e+2
+ 881 N-Ethylaniline                                        PBS           1.21e+0
+ 882 N-Ethylaniline                                        Plasma        1.21e+0
+ 883 N-Ethylaniline                                        Plasma.Bla…   9.91e-3
+ 884 N-Ethylaniline                                        T0            4.59e+0
+ 885 N-Methyl-2-pyrrolidone                                PBS           6.98e-1
+ 886 N-Methyl-2-pyrrolidone                                Plasma        3.05e-1
+ 887 N-Methyl-2-pyrrolidone                                Plasma.Bla…   0      
+ 888 N-Methyl-2-pyrrolidone                                T0            3.22e-1
+ 889 N-Phenyl-1-naphthylamine                              PBS           7.58e-4
+ 890 N-Phenyl-1-naphthylamine                              Plasma        7.42e-1
+ 891 N-Phenyl-1-naphthylamine                              Plasma.Bla…   6.89e-5
+ 892 N-Phenyl-1-naphthylamine                              T0            7.87e-1
+ 893 Naphthalen-2-yl 2-aminobenzoate                       PBS           2.91e-1
+ 894 Naphthalen-2-yl 2-aminobenzoate                       Plasma        5.67e+1
+ 895 Naphthalen-2-yl 2-aminobenzoate                       Plasma.Bla…   3.59e-2
+ 896 Naphthalen-2-yl 2-aminobenzoate                       T0            1.02e+2
+ 897 Nelivaptan                                            PBS           6.16e+1
+ 898 Nelivaptan                                            Plasma        1.86e+2
+ 899 Nelivaptan                                            Plasma.Bla…   1.71e-2
+ 900 Nelivaptan                                            T0            2.20e+2
+ 901 Nicotinic acid                                        PBS           9.56e-2
+ 902 Nicotinic acid                                        Plasma        4.77e-2
+ 903 Nicotinic acid                                        Plasma.Bla…   2.81e-3
+ 904 Nicotinic acid                                        T0            1.06e-1
+ 905 Nilutamide                                            PBS           3.73e-1
+ 906 Nilutamide                                            Plasma        3.00e-1
+ 907 Nilutamide                                            Plasma.Bla…   7.96e-5
+ 908 Nilutamide                                            T0            4.40e-1
+ 909 Nitrofurantoin                                        PBS           2.05e+1
+ 910 Nitrofurantoin                                        Plasma        1.59e+1
+ 911 Nitrofurantoin                                        Plasma.Bla…   4.98e-2
+ 912 Nitrofurantoin                                        T0            2.77e+1
+ 913 Nitrofurazone                                         PBS           1.55e+0
+ 914 Nitrofurazone                                         Plasma        6.62e-1
+ 915 Nitrofurazone                                         Plasma.Bla…   2.46e-2
+ 916 Nitrofurazone                                         T0            1.65e+0
+ 917 Nootkatone                                            PBS           7.66e-2
+ 918 Nootkatone                                            Plasma        6.12e-1
+ 919 Nootkatone                                            Plasma.Bla…   5.30e-2
+ 920 Nootkatone                                            T0            1.31e+0
+ 921 Nordihydroguaiaretic acid                             PBS           6.07e-4
+ 922 Nordihydroguaiaretic acid                             Plasma        7.33e-3
+ 923 Nordihydroguaiaretic acid                             Plasma.Bla…   1.39e-3
+ 924 Nordihydroguaiaretic acid                             T0            2.19e-2
+ 925 Norethindrone                                         PBS           9.35e-1
+ 926 Norethindrone                                         Plasma        3.17e+0
+ 927 Norethindrone                                         Plasma.Bla…   2.82e-2
+ 928 Norethindrone                                         T0            4.24e+0
+ 929 Norgestrel                                            PBS           4.20e-2
+ 930 Norgestrel                                            Plasma        1.46e-1
+ 931 Norgestrel                                            Plasma.Bla…   3.63e-3
+ 932 Norgestrel                                            T0            1.81e-1
+ 933 Octabenzone                                           PBS           1.04e-4
+ 934 Octabenzone                                           Plasma        3.68e-1
+ 935 Octabenzone                                           Plasma.Bla…   4.58e-5
+ 936 Octabenzone                                           T0            3.22e-1
+ 937 Octyl gallate                                         PBS           3.58e-1
+ 938 Octyl gallate                                         Plasma        3.66e-1
+ 939 Octyl gallate                                         Plasma.Bla…   1.40e+0
+ 940 Octyl gallate                                         T0            1.48e+0
+ 941 Oleyl sarcosine                                       PBS           2.49e-3
+ 942 Oleyl sarcosine                                       Plasma        7.06e-1
+ 943 Oleyl sarcosine                                       Plasma.Bla…   2.30e-3
+ 944 Oleyl sarcosine                                       T0            1.47e+0
+ 945 Oxadiazon                                             PBS           4.59e-3
+ 946 Oxadiazon                                             Plasma        3.02e-1
+ 947 Oxadiazon                                             Plasma.Bla…   1.89e-3
+ 948 Oxadiazon                                             T0            4.06e-1
+ 949 Oxyphenisatin                                         PBS           4.64e-2
+ 950 Oxyphenisatin                                         Plasma        2.54e-1
+ 951 Oxyphenisatin                                         Plasma.Bla…   1.14e-4
+ 952 Oxyphenisatin                                         T0            2.52e-1
+ 953 PD-0333941                                            PBS           4.39e-2
+ 954 PD-0333941                                            Plasma        5.35e+0
+ 955 PD-0333941                                            Plasma.Bla…   1.08e-5
+ 956 PD-0333941                                            T0            5.66e+0
+ 957 PFDA                                                  PBS           1.64e-2
+ 958 PFDA                                                  Plasma        9.94e+0
+ 959 PFDA                                                  Plasma.Bla…   6.07e-4
+ 960 PFDA                                                  T0            9.47e+0
+ 961 Paraoxon                                              PBS           6.05e-1
+ 962 Paraoxon                                              Plasma        3.18e-1
+ 963 Paraoxon                                              Plasma.Bla…   2.88e-4
+ 964 Paraoxon                                              T0            7.56e-1
+ 965 Pebulate                                              PBS           7.78e-2
+ 966 Pebulate                                              Plasma        1.87e+0
+ 967 Pebulate                                              Plasma.Bla…   7.83e-2
+ 968 Pebulate                                              T0            5.32e+0
+ 969 Pentachloropyridine                                   PBS           0      
+ 970 Pentachloropyridine                                   Plasma        4.99e-1
+ 971 Pentachloropyridine                                   Plasma.Bla…   0      
+ 972 Pentachloropyridine                                   T0            8.00e-1
+ 973 Perfluoroundecanoic acid                              PBS           3.22e-3
+ 974 Perfluoroundecanoic acid                              Plasma        9.56e+0
+ 975 Perfluoroundecanoic acid                              Plasma.Bla…   4.84e-4
+ 976 Perfluoroundecanoic acid                              T0            8.62e+0
+ 977 PharmaGSID_48505                                      PBS           6.61e-2
+ 978 PharmaGSID_48505                                      Plasma        1.14e+0
+ 979 PharmaGSID_48505                                      Plasma.Bla…   5.45e-6
+ 980 PharmaGSID_48505                                      T0            1.38e+0
+ 981 PharmaGSID_48510                                      PBS           2.11e-1
+ 982 PharmaGSID_48510                                      Plasma        2.93e+0
+ 983 PharmaGSID_48510                                      Plasma.Bla…   2.72e-5
+ 984 PharmaGSID_48510                                      T0            3.15e+0
+ 985 Phenanthrene                                          PBS           6.90e-2
+ 986 Phenanthrene                                          Plasma        5.75e-2
+ 987 Phenanthrene                                          Plasma.Bla…   6.50e-2
+ 988 Phenanthrene                                          T0            7.24e-2
+ 989 Phenol Red sodium salt                                PBS           8.25e-3
+ 990 Phenol Red sodium salt                                Plasma        1.41e-2
+ 991 Phenol Red sodium salt                                Plasma.Bla…   2.83e-5
+ 992 Phenol Red sodium salt                                T0            2.33e-2
+ 993 Phenol red                                            PBS           8.94e-2
+ 994 Phenol red                                            Plasma        1.16e-1
+ 995 Phenol red                                            Plasma.Bla…   8.35e-4
+ 996 Phenol red                                            T0            1.72e-1
+ 997 Phenolphthalin                                        PBS           4.00e-2
+ 998 Phenolphthalin                                        Plasma        7.48e-1
+ 999 Phenolphthalin                                        Plasma.Bla…   5.30e-4
+1000 Phenolphthalin                                        T0            7.94e-1
+1001 Phenothiazine                                         PBS           7.24e-3
+1002 Phenothiazine                                         Plasma        2.78e-1
+1003 Phenothiazine                                         Plasma.Bla…   2.47e-3
+1004 Phenothiazine                                         T0            3.50e-1
+1005 Phosalone                                             PBS           1.86e-2
+1006 Phosalone                                             Plasma        1.03e+0
+1007 Phosalone                                             Plasma.Bla…   1.66e-4
+1008 Phosalone                                             T0            1.30e+0
+1009 Picloram                                              PBS           6.20e-1
+1010 Picloram                                              Plasma        4.50e-1
+1011 Picloram                                              Plasma.Bla…   1.19e-4
+1012 Picloram                                              T0            9.31e-1
+1013 Pioglitazone hydrochloride                            PBS           1.18e+0
+1014 Pioglitazone hydrochloride                            Plasma        1.57e+1
+1015 Pioglitazone hydrochloride                            Plasma.Bla…   3.88e-4
+1016 Pioglitazone hydrochloride                            T0            1.41e+1
+1017 Piragliatin                                           PBS           1.54e+0
+1018 Piragliatin                                           Plasma        7.77e-1
+1019 Piragliatin                                           Plasma.Bla…   1.24e-3
+1020 Piragliatin                                           T0            1.69e+0
+1021 Pirimiphos-methyl                                     PBS           1.34e-2
+1022 Pirimiphos-methyl                                     Plasma        8.05e-1
+1023 Pirimiphos-methyl                                     Plasma.Bla…   5.61e-4
+1024 Pirimiphos-methyl                                     T0            1.21e+0
+1025 Pravastatin sodium                                    PBS           2.30e+1
+1026 Pravastatin sodium                                    Plasma        2.04e+1
+1027 Pravastatin sodium                                    Plasma.Bla…   8.07e-2
+1028 Pravastatin sodium                                    T0            3.44e+1
+1029 Prometon                                              PBS           1.00e+0
+1030 Prometon                                              Plasma        4.09e+0
+1031 Prometon                                              Plasma.Bla…   1.27e-4
+1032 Prometon                                              T0            5.44e+0
+1033 Propachlor                                            PBS           1.43e+0
+1034 Propachlor                                            Plasma        9.33e-1
+1035 Propachlor                                            Plasma.Bla…   1.19e-3
+1036 Propachlor                                            T0            2.00e+0
+1037 Propanull                                             PBS           3.25e-2
+1038 Propanull                                             Plasma        7.46e-2
+1039 Propanull                                             Plasma.Bla…   6.19e-4
+1040 Propanull                                             T0            1.01e-1
+1041 Propranolol                                           PBS           1.87e+0
+1042 Propranolol                                           Plasma        1.60e+0
+1043 Propranolol                                           Plasma.Bla…   3.41e-3
+1044 Propranolol                                           T0            2.90e+0
+1045 Propyl gallate                                        PBS           3.40e-2
+1046 Propyl gallate                                        Plasma        2.71e-1
+1047 Propyl gallate                                        Plasma.Bla…   5.11e-5
+1048 Propyl gallate                                        T0            3.53e-1
+1049 Raloxifene hydrochloride                              PBS           3.60e-1
+1050 Raloxifene hydrochloride                              Plasma        4.81e+0
+1051 Raloxifene hydrochloride                              Plasma.Bla…   1.84e-1
+1052 Raloxifene hydrochloride                              T0            4.83e+0
+1053 Resveratrol                                           PBS           1.83e-2
+1054 Resveratrol                                           Plasma        7.97e-2
+1055 Resveratrol                                           Plasma.Bla…   2.12e-2
+1056 Resveratrol                                           T0            1.71e-1
+1057 Rhodamine 6G                                          PBS           1.31e-1
+1058 Rhodamine 6G                                          Plasma        3.78e-1
+1059 Rhodamine 6G                                          Plasma.Bla…   8.95e-2
+1060 Rhodamine 6G                                          T0            7.61e-1
+1061 SSR162369                                             PBS           2.39e+0
+1062 SSR162369                                             Plasma        1.39e+0
+1063 SSR162369                                             Plasma.Bla…   5.13e-5
+1064 SSR162369                                             T0            4.15e+0
+1065 Secbumeton                                            PBS           1.33e+2
+1066 Secbumeton                                            Plasma        4.22e+2
+1067 Secbumeton                                            Plasma.Bla…   3.63e-3
+1068 Secbumeton                                            T0            4.39e+2
+1069 Sodium 2-mercaptobenzothiolate                        PBS           7.29e-3
+1070 Sodium 2-mercaptobenzothiolate                        Plasma        3.42e-2
+1071 Sodium 2-mercaptobenzothiolate                        Plasma.Bla…   3.18e-6
+1072 Sodium 2-mercaptobenzothiolate                        T0            4.33e-2
+1073 Sodium 4-nitrophenolate                               PBS           4.55e+0
+1074 Sodium 4-nitrophenolate                               Plasma        7.35e+0
+1075 Sodium 4-nitrophenolate                               Plasma.Bla…   6.73e-2
+1076 Sodium 4-nitrophenolate                               T0            1.42e+1
+1077 Sodium dehydroacetate                                 PBS           9.23e-2
+1078 Sodium dehydroacetate                                 Plasma        2.37e-1
+1079 Sodium dehydroacetate                                 Plasma.Bla…   3.69e-3
+1080 Sodium dehydroacetate                                 T0            3.40e-1
+1081 Sodium saccharin hydrate                              PBS           1.87e+1
+1082 Sodium saccharin hydrate                              Plasma        1.25e+0
+1083 Sodium saccharin hydrate                              Plasma.Bla…   4.85e-2
+1084 Sodium saccharin hydrate                              T0            2.41e+0
+1085 Sulfamethazine                                        PBS           8.23e-1
+1086 Sulfamethazine                                        Plasma        1.01e+0
+1087 Sulfamethazine                                        Plasma.Bla…   5.88e-5
+1088 Sulfamethazine                                        T0            1.43e+0
+1089 Sulfaquinoxaline                                      PBS           4.90e-3
+1090 Sulfaquinoxaline                                      Plasma        3.71e-1
+1091 Sulfaquinoxaline                                      Plasma.Bla…   1.78e-4
+1092 Sulfaquinoxaline                                      T0            5.03e-1
+1093 Sulfluramid                                           PBS           2.21e-4
+1094 Sulfluramid                                           Plasma        9.74e-1
+1095 Sulfluramid                                           Plasma.Bla…   8.97e-5
+1096 Sulfluramid                                           T0            1.35e+0
+1097 Sulfotepp                                             PBS           7.11e-2
+1098 Sulfotepp                                             Plasma        6.35e-1
+1099 Sulfotepp                                             Plasma.Bla…   1.29e-3
+1100 Sulfotepp                                             T0            1.22e+0
+1101 Sulisobenzone                                         PBS           3.01e-3
+1102 Sulisobenzone                                         Plasma        7.42e-2
+1103 Sulisobenzone                                         Plasma.Bla…   3.09e-5
+1104 Sulisobenzone                                         T0            7.46e-2
+1105 Surinabant                                            PBS           4.34e-2
+1106 Surinabant                                            Plasma        4.14e+1
+1107 Surinabant                                            Plasma.Bla…   1.20e-3
+1108 Surinabant                                            T0            3.70e+1
+1109 Tamoxifen                                             PBS           1.01e-2
+1110 Tamoxifen                                             Plasma        1.52e+1
+1111 Tamoxifen                                             Plasma.Bla…   1.31e-3
+1112 Tamoxifen                                             T0            1.58e+1
+1113 Tamoxifen citrate                                     PBS           1.68e-1
+1114 Tamoxifen citrate                                     Plasma        1.15e+2
+1115 Tamoxifen citrate                                     Plasma.Bla…   1.90e-3
+1116 Tamoxifen citrate                                     T0            1.27e+2
+1117 Tembotrione                                           PBS           4.12e+0
+1118 Tembotrione                                           Plasma        1.01e+1
+1119 Tembotrione                                           Plasma.Bla…   1.84e-2
+1120 Tembotrione                                           T0            1.25e+1
+1121 Testosterone propionate                               PBS           7.46e-3
+1122 Testosterone propionate                               Plasma        5.33e-1
+1123 Testosterone propionate                               Plasma.Bla…   4.67e-3
+1124 Testosterone propionate                               T0            6.29e-1
+1125 Tetrabromophenolphthalein ethyl ester                 PBS           2.75e-3
+1126 Tetrabromophenolphthalein ethyl ester                 Plasma        6.71e-2
+1127 Tetrabromophenolphthalein ethyl ester                 Plasma.Bla…   1.66e-4
+1128 Tetrabromophenolphthalein ethyl ester                 T0            6.52e-2
+1129 Tetracycline                                          PBS           4.50e-1
+1130 Tetracycline                                          Plasma        3.20e-1
+1131 Tetracycline                                          Plasma.Bla…   1.90e-5
+1132 Tetracycline                                          T0            7.86e-1
+1133 Tetrahydrocurcumin                                    PBS           6.94e-1
+1134 Tetrahydrocurcumin                                    Plasma        1.86e+0
+1135 Tetrahydrocurcumin                                    Plasma.Bla…   4.43e-3
+1136 Tetrahydrocurcumin                                    T0            3.72e+0
+1137 Theobromine                                           PBS           2.93e+0
+1138 Theobromine                                           Plasma        1.02e+0
+1139 Theobromine                                           Plasma.Bla…   1.79e-1
+1140 Theobromine                                           T0            2.77e+0
+1141 Tolazamide                                            PBS           1.02e-1
+1142 Tolazamide                                            Plasma        4.93e-1
+1143 Tolazamide                                            Plasma.Bla…   8.43e-5
+1144 Tolazamide                                            T0            9.86e-1
+1145 Tolcapone                                             PBS           6.48e-3
+1146 Tolcapone                                             Plasma        3.93e-1
+1147 Tolcapone                                             Plasma.Bla…   2.42e-4
+1148 Tolcapone                                             T0            3.91e-1
+1149 Trelanserin                                           PBS           7.18e-1
+1150 Trelanserin                                           Plasma        2.03e+0
+1151 Trelanserin                                           Plasma.Bla…   1.47e-1
+1152 Trelanserin                                           T0            5.93e+0
+1153 Triamterene                                           PBS           3.02e-1
+1154 Triamterene                                           Plasma        2.32e-1
+1155 Triamterene                                           Plasma.Bla…   9.49e-4
+1156 Triamterene                                           T0            6.29e-1
+1157 Triazophos                                            PBS           9.99e+1
+1158 Triazophos                                            Plasma        2.98e+2
+1159 Triazophos                                            Plasma.Bla…   1.04e-2
+1160 Triazophos                                            T0            3.31e+2
+1161 Triethylene glycol diacetate                          PBS           4.82e+0
+1162 Triethylene glycol diacetate                          Plasma        1.85e+0
+1163 Triethylene glycol diacetate                          Plasma.Bla…   1.41e-3
+1164 Triethylene glycol diacetate                          T0            6.84e+0
+1165 Triethylene glycol dimethyl ether                     PBS           2.74e+1
+1166 Triethylene glycol dimethyl ether                     Plasma        1.24e+1
+1167 Triethylene glycol dimethyl ether                     Plasma.Bla…   2.55e-2
+1168 Triethylene glycol dimethyl ether                     T0            2.94e+1
+1169 Trifloxystrobin                                       PBS           3.29e+0
+1170 Trifloxystrobin                                       Plasma        1.36e+2
+1171 Trifloxystrobin                                       Plasma.Bla…   5.18e-3
+1172 Trifloxystrobin                                       T0            1.50e+2
+1173 Triglycidyl isocyanurate                              PBS           6.69e-1
+1174 Triglycidyl isocyanurate                              Plasma        4.12e-1
+1175 Triglycidyl isocyanurate                              Plasma.Bla…   2.49e-1
+1176 Triglycidyl isocyanurate                              T0            1.25e+0
+1177 Triphenylphosphine oxide                              PBS           4.64e-1
+1178 Triphenylphosphine oxide                              Plasma        7.36e-1
+1179 Triphenylphosphine oxide                              Plasma.Bla…   1.12e-3
+1180 Triphenylphosphine oxide                              T0            9.93e-1
+1181 Tris(2-chloroethyl) phosphate                         PBS           1.33e-1
+1182 Tris(2-chloroethyl) phosphate                         Plasma        7.64e-2
+1183 Tris(2-chloroethyl) phosphate                         Plasma.Bla…   3.01e-4
+1184 Tris(2-chloroethyl) phosphate                         T0            1.64e-1
+1185 Warfarin                                              PBS           2.30e+0
+1186 Warfarin                                              Plasma        1.83e+1
+1187 Warfarin                                              Plasma.Bla…   3.45e-2
+1188 Warfarin                                              T0            2.09e+1
+1189 dl-Norgestrel                                         PBS           2.01e-1
+1190 dl-Norgestrel                                         Plasma        7.94e-1
+1191 dl-Norgestrel                                         Plasma.Bla…   7.74e-2
+1192 dl-Norgestrel                                         T0            1.01e+0
+1193 meso-Hexestrol                                        PBS           1.08e-3
+1194 meso-Hexestrol                                        Plasma        5.07e-2
+1195 meso-Hexestrol                                        Plasma.Bla…   1.03e-4
+1196 meso-Hexestrol                                        T0            6.37e-2
+1197 p,p'-DDE                                              PBS           1.11e-3
+1198 p,p'-DDE                                              Plasma        1.51e-3
+1199 p,p'-DDE                                              Plasma.Bla…   1.55e-3
+1200 p,p'-DDE                                              T0            1.28e-3
+1201 p-Xylenol blue                                        PBS           3.99e-2
+1202 p-Xylenol blue                                        Plasma        2.15e-1
+1203 p-Xylenol blue                                        Plasma.Bla…   1.34e-5
+1204 p-Xylenol blue                                        T0            2.42e-1
+> #==============================================================================#
+> ## Session Information ##
+> Sys.time()
+[1] "2025-07-11 10:20:16 EDT"
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1     stringr_1.5.1  magrittr_2.0.3 dplyr_1.1.4   
+
+loaded via a namespace (and not attached):
+ [1] utf8_1.2.6        R6_2.6.1          tidyselect_1.2.1  glue_1.8.0       
+ [5] tibble_3.3.0      pkgconfig_2.0.3   generics_0.1.4    lifecycle_1.0.4  
+ [9] cli_3.6.5         vctrs_0.6.5       compiler_4.4.2    rprojroot_2.0.4  
+[13] rstudioapi_0.17.1 tools_4.4.2       pillar_1.10.2     rlang_1.1.6      
+[17] stringi_1.8.7    
+> #==============================================================================#
+> 
+> proc.time()
+   user  system elapsed 
+   0.43    0.17    7.34 

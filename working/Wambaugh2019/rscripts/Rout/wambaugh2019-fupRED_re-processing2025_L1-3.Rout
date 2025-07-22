@@ -1,0 +1,760 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #------------------------------------------------------------------------------#
+> ## Re-processing Wambaugh2019 fup RED (L1-L3) ##
+> #------------------------------------------------------------------------------#
+> ## NOTE: This script is meant to be run programmatically via the following
+> ##       command in the bash command line terminal:
+> ##          `R CMD BATCH --vanilla wambaugh2019-fupRED_re-processing2025.R`
+> #------------------------------------------------------------------------------#
+> ## R Packages ##
+> library(invitroTKstats)
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(tictoc)
+Warning message:
+package 'tictoc' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> ## Check Package Version ##
+> packageVersion("invitroTKstats")
+[1] '0.0.13'
+> #------------------------------------------------------------------------------#
+> ## Load in Data ##
+> #================================================================#
+> # NOTE: The 'data_dir' is the user specific path to where the    #
+> #       data is. Ideally, one would be working within an R       #
+> #       project and could utilize the "here" package for         #
+> #       relative file path identification.                       #
+> #================================================================#
+> # load in the currently utilized L0 data files - wambaugh2019.RData prepared by format-wambaugh2019*.R
+> load(here::here("raw_data/wambaugh2019.RData"),verbose = TRUE)
+Loading objects:
+  wambaugh2019.clint
+  wambaugh2019.red
+  wambaugh2019.methods
+> #------------------------------------------------------------------------------#
+> ## pre-data proc steps ##
+> #================================================================#
+> # NOTE: This is legacy data and some of the current requirements # 
+> #       were not necessary in prototype versions of the          #
+> #       invitroTKstats R package.                                #
+> #================================================================#
+> # assign the old version of the Wambaugh2019 fup RED (L0) dataset to an new object
+> wambaugh2019.red.updated <- wambaugh2019.red
+> 
+> # remove cases where SampleName is missing (i.e. "NA")
+> wambaugh2019.red.updated <- dplyr::filter(wambaugh2019.red.updated,!is.na(SampleName))
+> 
+> # change the area, response, dilution factor, and protein columns to be numeric
+> wambaugh2019.red.updated[,"Area"] <- as.numeric(wambaugh2019.red.updated[,"Area"])
+> wambaugh2019.red.updated[,"ISTD.Area"] <- as.numeric(wambaugh2019.red.updated[,"ISTD.Area"])
+> wambaugh2019.red.updated[,"ISTDResponseRatio"] <- as.numeric(wambaugh2019.red.updated[,"ISTDResponseRatio"])
+> wambaugh2019.red.updated[,"Dilution.Factor"] <- as.numeric(wambaugh2019.red.updated[,"Dilution.Factor"])
+Warning message:
+NAs introduced by coercion 
+> wambaugh2019.red.updated[,"Protein"] <- as.numeric(wambaugh2019.red.updated[,"Protein"])
+> 
+> # add the sample type column
+> wambaugh2019.red.updated <- dplyr::mutate(wambaugh2019.red.updated,Sample.Type = NA) # create a Sample.Type columm - assign all to NA
+> wambaugh2019.red.updated[grepl(wambaugh2019.red.updated[,"SampleName"],pattern = "blank",ignore.case = TRUE),"Sample.Type"] <- "No.Plasma.Blank" # assume all lab sample names with blank are no plasma blanks
+> wambaugh2019.red.updated[grepl(wambaugh2019.red.updated[,"SampleName"],pattern = "plasma",ignore.case = TRUE),"Sample.Type"] <- "Plasma" # assume all lab sample names with plasma are plasma samples
+> wambaugh2019.red.updated[grepl(wambaugh2019.red.updated[,"SampleName"],pattern = "blank.+plasma",ignore.case = TRUE),"Sample.Type"] <- "Plasma.Blank" # assume lab sample names with blank and plasma are plasma blanks (overwrite any previously assigned to no plasma blank)
+> wambaugh2019.red.updated[grepl(wambaugh2019.red.updated[,"SampleName"],pattern = "Plasma_T0|T0",ignore.case = TRUE),"Sample.Type"] <- "T0" # assume lab sample names with T0 are T0 sample types
+> wambaugh2019.red.updated[grepl(wambaugh2019.red.updated[,"SampleName"],pattern = "PBS"),"Sample.Type"] <- "PBS" # assume lab sample names with PBS are PBS sample types
+> 
+> # add the "general" dilution factor information (based on previous formatting R script)
+> wambaugh2019.red.updated <- dplyr::mutate(wambaugh2019.red.updated,Dilution.Factor.Gen = 1) # assume for baseline all DF's are 1 unless otherwise specified below (based on `Clint-2019-Example.R`)
+> wambaugh2019.red.updated[which(wambaugh2019.red.updated[,"Sample.Type"]=="PBS"),"Dilution.Factor.Gen"] <- 2
+> wambaugh2019.red.updated[which(wambaugh2019.red.updated[,"Sample.Type"]=="Plasma"),"Dilution.Factor.Gen"] <- 5
+> 
+> # add an updated task order/calibration column
+> wambaugh2019.red.updated <- dplyr::mutate(wambaugh2019.red.updated,TO.cal = Task.Order)
+> # identify cases where there is a missing TO, which we will assume for the Calibration
+> missing_TO <- which(is.na(wambaugh2019.red.updated[,"Task.Order"]))
+> # extract the TO numbers for the TO.cal column
+> wambaugh2019.red.updated[missing_TO,"TO.cal"] <- wambaugh2019.red.updated[missing_TO,"RawDataSet"] %>%
++   stringr::str_extract_all(.,pattern = "task.\\d+|Task.\\d+|task\\d+|Task\\d+") %>%
++   stringr::str_remove(.,pattern ="task\\s+|Task\\s+|task|Task") %>%
++   as.vector.data.frame() %>%
++   as.numeric()
+Warning messages:
+1: In stri_replace_first_regex(string, pattern, fix_replacement(replacement),  :
+  argument is not an atomic vector; coercing
+2: In wambaugh2019.red.updated[missing_TO, "RawDataSet"] %>% stringr::str_extract_all(.,  :
+  NAs introduced by coercion
+> # for those still missing value in TO.cal assign to "Wambaugh2019" for now
+> wambaugh2019.red.updated[which(is.na(wambaugh2019.red.updated[,"TO.cal"])),"TO.cal"] <- "Wambaugh2019"
+> 
+> # identify Compound.Names that are "NA"
+> missing_cmpdname <- which(wambaugh2019.red.updated[,"Preferred.Name"] == "NA" & !grepl(x = wambaugh2019.red.updated$CompoundName,pattern = "^EV"))
+> wambaugh2019.red.updated[missing_cmpdname,"Preferred.Name"] <- stringr::str_remove(wambaugh2019.red.updated[missing_cmpdname,"CompoundName"],pattern = "-\\d+.+")
+> #------------------------------------------------------------------------------#
+> ## Reassign Pre-Proc Object to L0 ##
+> wambaugh2019.red.L0 <- wambaugh2019.red.updated
+> #------------------------------------------------------------------------------#
+> ## Process L0 Data to L1 ##
+> tictoc::tic()
+> wambaugh2019.red.L1 <- invitroTKstats::format_fup_red(
++   data.in = wambaugh2019.red.updated,
++   FILENAME = "Wambaugh2019_regen2025",
++   sig.figs = NULL,
++   output.res = TRUE,
++   OUTPUT.DIR = here::here("data"),
++   sample.col="SampleName",
++   compound.col="Preferred.Name",
++   lab.compound.col="CompoundName",
++   # cal.col = "TO.cal",
++   cal = "Wambaugh2019",
++   date = "MMDD19",
++   # NOTE: This is what is gathered from the "format-wambaugh2019-red.data.R", but lists multiple 3 compounds which is not ideal.
++   istd.name = "Bucetin and Diclofenac",
++   istd.conc = 1,
++   dilution.col = "Dilution.Factor.Gen",
++   plasma.percent.col = "Protein",
++   biological.replicates = 1,technical.replicates = 1,
++   analysis.method = "TBD",
++   analysis.instrument = "TBD",
++   analysis.parameters = "TBD",
++   note.col = NULL,
++   test.nominal.conc = 5,
++   test.conc = 5, # guessing on this one
++   time = 120, # guessing on this one
++   level0.file = "toxsci-19-0394-File011.xlsx",
++   level0.sheet = "SupplementalTable2"
++ )
+A level-1 file named Wambaugh2019_regen2025-fup-RED-Level1.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+16068 observations of 399 chemicals based on 399 separate measurements (calibrations).
+The following 399 chemicals have incomplete data sets:
+  [1] "DTXSID0020022, DTXSID0020286, DTXSID0020319, DTXSID0020573," 
+  [2] "DTXSID0020654, DTXSID0021123, DTXSID0021385, DTXSID0021389," 
+  [3] "DTXSID0021834, DTXSID0021965, DTXSID0021969, DTXSID0022018," 
+  [4] "DTXSID0022353, DTXSID0022436, DTXSID0022519, DTXSID0023296," 
+  [5] "DTXSID0024002, DTXSID0024052, DTXSID0024216, DTXSID0024266," 
+  [6] "DTXSID0025101, DTXSID0025234, DTXSID0025864, DTXSID0027721," 
+  [7] "DTXSID0028038, DTXSID0034192, DTXSID0037576, DTXSID0038887," 
+  [8] "DTXSID0040707, DTXSID0040755, DTXSID0042086, DTXSID0047246," 
+  [9] "DTXSID0047296, DTXSID0048181, DTXSID0048183, DTXSID0048185," 
+ [10] "DTXSID0048189, DTXSID0048505, DTXSID00872663, DTXSID1020069,"
+ [11] "DTXSID1020485, DTXSID1020807, DTXSID1020930, DTXSID1020932," 
+ [12] "DTXSID1021031, DTXSID1021160, DTXSID1021243, DTXSID1021247," 
+ [13] "DTXSID1021299, DTXSID1022267, DTXSID1022394, DTXSID1022396," 
+ [14] "DTXSID1022421, DTXSID1024049, DTXSID1024259, DTXSID1024598," 
+ [15] "DTXSID1025271, DTXSID1026035, DTXSID1026081, DTXSID1026164," 
+ [16] "DTXSID1026792, DTXSID1026900, DTXSID1026906, DTXSID1027635," 
+ [17] "DTXSID1032519, DTXSID1032646, DTXSID1033664, DTXSID1034181," 
+ [18] "DTXSID1034187, DTXSID1034973, DTXSID1038298, DTXSID1038321," 
+ [19] "DTXSID1040372, DTXSID1041508, DTXSID1041847, DTXSID1042077," 
+ [20] "DTXSID1042154, DTXSID1044564, DTXSID1044643, DTXSID1046970," 
+ [21] "DTXSID1047576, DTXSID1048122, DTXSID2020347, DTXSID2020686," 
+ [22] "DTXSID2020688, DTXSID2020713, DTXSID2020894, DTXSID2021440," 
+ [23] "DTXSID2022121, DTXSID2022179, DTXSID2022254, DTXSID2022381," 
+ [24] "DTXSID2022678, DTXSID2023224, DTXSID2024086, DTXSID2025680," 
+ [25] "DTXSID2025892, DTXSID2026446, DTXSID2027200, DTXSID2028985," 
+ [26] "DTXSID2029874, DTXSID2032344, DTXSID2032348, DTXSID2032500," 
+ [27] "DTXSID2032550, DTXSID2034598, DTXSID2037712, DTXSID2037714," 
+ [28] "DTXSID2039336, DTXSID2041250, DTXSID2042436, DTXSID2044420," 
+ [29] "DTXSID2044890, DTXSID2047270, DTXSID2047272, DTXSID2047307," 
+ [30] "DTXSID2047355, DTXSID2047357, DTXSID2048167, DTXSID3020205," 
+ [31] "DTXSID3020257, DTXSID3020336, DTXSID3020465, DTXSID3020673," 
+ [32] "DTXSID3020887, DTXSID3021358, DTXSID3021770, DTXSID3021778," 
+ [33] "DTXSID3022405, DTXSID3022409, DTXSID3022536, DTXSID3023685," 
+ [34] "DTXSID3024239, DTXSID3026223, DTXSID3026691, DTXSID3027320," 
+ [35] "DTXSID3030636, DTXSID3031860, DTXSID3034165, DTXSID3034612," 
+ [36] "DTXSID3034618, DTXSID3036496, DTXSID3037094, DTXSID3037208," 
+ [37] "DTXSID3040776, DTXSID3041035, DTXSID3041409, DTXSID3041744," 
+ [38] "DTXSID3041794, DTXSID3042633, DTXSID3044203, DTXSID3044590," 
+ [39] "DTXSID3044704, DTXSID3047344, DTXSID3047346, DTXSID3047429," 
+ [40] "DTXSID3047477, DTXSID3048520, DTXSID30865801, DTXSID4020119,"
+ [41] "DTXSID4020240, DTXSID4020371, DTXSID4020375, DTXSID4020450," 
+ [42] "DTXSID4020791, DTXSID4020822, DTXSID4020870, DTXSID4021135," 
+ [43] "DTXSID4021218, DTXSID4021395, DTXSID4022288, DTXSID4022367," 
+ [44] "DTXSID4022369, DTXSID4022446, DTXSID4024274, DTXSID4024276," 
+ [45] "DTXSID4024436, DTXSID4026262, DTXSID4027236, DTXSID4027604," 
+ [46] "DTXSID4031980, DTXSID4032372, DTXSID4032580, DTXSID4032667," 
+ [47] "DTXSID4034287, DTXSID4040713, DTXSID4040767, DTXSID4042206," 
+ [48] "DTXSID4047252, DTXSID4047258, DTXSID4047882, DTXSID4048191," 
+ [49] "DTXSID4048199, DTXSID5020108, DTXSID5020154, DTXSID5020283," 
+ [50] "DTXSID5020366, DTXSID5020449, DTXSID5020944, DTXSID5021126," 
+ [51] "DTXSID5021201, DTXSID5021332, DTXSID5021388, DTXSID5021411," 
+ [52] "DTXSID5021413, DTXSID5022437, DTXSID5022439, DTXSID5022489," 
+ [53] "DTXSID5023322, DTXSID5023742, DTXSID5023871, DTXSID5023900," 
+ [54] "DTXSID5024891, DTXSID5027061, DTXSID5029055, DTXSID5031131," 
+ [55] "DTXSID5032498, DTXSID5035957, DTXSID5037494, DTXSID5037731," 
+ [56] "DTXSID5037739, DTXSID5038888, DTXSID5040706, DTXSID5040708," 
+ [57] "DTXSID5041306, DTXSID5041516, DTXSID5042243, DTXSID5044520," 
+ [58] "DTXSID5044528, DTXSID5047037, DTXSID5047291, DTXSID5047320," 
+ [59] "DTXSID5048180, DTXSID5048184, DTXSID5051650, DTXSID6020068," 
+ [60] "DTXSID6020147, DTXSID6020197, DTXSID6020511, DTXSID6020690," 
+ [61] "DTXSID6020692, DTXSID6020856, DTXSID6021290, DTXSID6021373," 
+ [62] "DTXSID6021456, DTXSID6021824, DTXSID6021828, DTXSID6021872," 
+ [63] "DTXSID6022341, DTXSID6022345, DTXSID6022391, DTXSID6022422," 
+ [64] "DTXSID6022474, DTXSID6022927, DTXSID6023525, DTXSID6023652," 
+ [65] "DTXSID6023862, DTXSID6023868, DTXSID6024046, DTXSID6024123," 
+ [66] "DTXSID6024177, DTXSID6024254, DTXSID6024337, DTXSID6024466," 
+ [67] "DTXSID6024888, DTXSID6025014, DTXSID6025068, DTXSID6025226," 
+ [68] "DTXSID6025438, DTXSID6025486, DTXSID6025567, DTXSID6032354," 
+ [69] "DTXSID6032358, DTXSID6032647, DTXSID6034265, DTXSID6035152," 
+ [70] "DTXSID6037728, DTXSID6040747, DTXSID6043709, DTXSID6043915," 
+ [71] "DTXSID6047282, DTXSID6047319, DTXSID6047525, DTXSID6051306," 
+ [72] "DTXSID7020182, DTXSID7020687, DTXSID7020710, DTXSID7020764," 
+ [73] "DTXSID7020972, DTXSID7021239, DTXSID7021992, DTXSID7023645," 
+ [74] "DTXSID7024081, DTXSID7024112, DTXSID7024164, DTXSID7024328," 
+ [75] "DTXSID7024827, DTXSID7025132, DTXSID7026029, DTXSID7029320," 
+ [76] "DTXSID7029871, DTXSID7030307, DTXSID7031248, DTXSID7031531," 
+ [77] "DTXSID7032345, DTXSID7032630, DTXSID7034383, DTXSID7034674," 
+ [78] "DTXSID7037185, DTXSID7037551, DTXSID7037717, DTXSID7038864," 
+ [79] "DTXSID7042481, DTXSID7047277, DTXSID7047306, DTXSID7047354," 
+ [80] "DTXSID7047356, DTXSID7047358, DTXSID7047433, DTXSID7047568," 
+ [81] "DTXSID7047697, DTXSID7048168, DTXSID8020123, DTXSID8020961," 
+ [82] "DTXSID8021199, DTXSID8021301, DTXSID8021804, DTXSID8021856," 
+ [83] "DTXSID8022111, DTXSID8022292, DTXSID8022377, DTXSID8022406," 
+ [84] "DTXSID8022408, DTXSID8023214, DTXSID8023216, DTXSID8023890," 
+ [85] "DTXSID8024072, DTXSID8024157, DTXSID8024159, DTXSID8024280," 
+ [86] "DTXSID8026224, DTXSID8026303, DTXSID8031077, DTXSID8032417," 
+ [87] "DTXSID8032544, DTXSID8032548, DTXSID8032673, DTXSID8033562," 
+ [88] "DTXSID8034588, DTXSID8034871, DTXSID8037594, DTXSID8040694," 
+ [89] "DTXSID8041248, DTXSID8042424, DTXSID8044545, DTXSID8044593," 
+ [90] "DTXSID8044836, DTXSID8047050, DTXSID8047266, DTXSID8047553," 
+ [91] "DTXSID9020114, DTXSID9020295, DTXSID9020370, DTXSID9020374," 
+ [92] "DTXSID9020407, DTXSID9020740, DTXSID9020790, DTXSID9020827," 
+ [93] "DTXSID9022310, DTXSID9022364, DTXSID9022522, DTXSID9022526," 
+ [94] "DTXSID9022817, DTXSID9023380, DTXSID9024065, DTXSID9024489," 
+ [95] "DTXSID9025536, DTXSID9026132, DTXSID9027441, DTXSID9027522," 
+ [96] "DTXSID9029221, DTXSID9032535, DTXSID9033923, DTXSID9034361," 
+ [97] "DTXSID9034492, DTXSID9034816, DTXSID9034818, DTXSID9034864," 
+ [98] "DTXSID9036515, DTXSID9037612, DTXSID9037741, DTXSID9040001," 
+ [99] "DTXSID9041653, DTXSID9044459, DTXSID9044538, DTXSID9044950," 
+[100] "DTXSID9048510, DTXSID9058654, NA"                            
+
+Warning message:
+In invitroTKstats::format_fup_red(data.in = wambaugh2019.red.updated,  :
+  Data with inappropriate sample types were removed.
+> tictoc::toc()
+1.77 sec elapsed
+> ## Process L1 to L2 ##
+> # check if there are any lab sample names registered as `NA`
+> any(is.na(wambaugh2019.red.L1$Lab.Compound.Name))
+[1] TRUE
+> # remove any samples with Lab.Compound.Name == `NA`
+> #   if there are missing Lab.Compound.Name entries these samples should be removed
+> #   as this is minimum required information from the wet-lab generating data
+> if(any(is.na(wambaugh2019.red.L1$Lab.Compound.Name))){
++   # stash samples with a missing Lab.Compound.Name
++   samps_na.lab.comp.name <- dplyr::filter(wambaugh2019.red.L1,is.na(Lab.Compound.Name))
++   save(samps_na.lab.comp.name,
++        file = here::here("data/Wambaugh2019_regen2025_fupRED_LCNsampNA.RData"))
++   # update the L1 dataset
++   wambaugh2019.red.L1 <- dplyr::filter(wambaugh2019.red.L1,!is.na(Lab.Compound.Name))
++ }
+> # create an exclusion criteria dataframe
+> #   when doing the initial processing identified a compound with Blank samples and Response is Infinite
+> #   assume these samples should be "unverified" (i.e. held-out from the data)
+> exclusion_cases <- dplyr::filter(wambaugh2019.red.L1,is.nan(Response)) %>%
++   .[,"Lab.Compound.Name"] %>%
++   unique() %>% 
++   paste("NA",.,"Plasma",0,sep = "|")
+> 
+> EC_wambaugh2019.red <- data.frame(
++   Variables = rep("DTXSID|Lab.Compound.Name|Sample.Type|ISTD.Area",length(exclusion_cases)),
++   Values = exclusion_cases,
++   Message = c("ISTD.Area and Area are both 0 - Results in NaN Response.")
++ )
+> 
+> tictoc::tic()
+> wambaugh2019.red.L2 <- invitroTKstats::sample_verification(
++   data.in = wambaugh2019.red.L1,
++   output.res = TRUE,
++   exclusion.info = EC_wambaugh2019.red,
++   FILENAME = "Wambaugh2019_regen2025",
++   assay = "fup-RED",
++   OUTPUT.DIR = here::here("data")
++ )
+A level-2 file named Wambaugh2019_regen2025-fup-RED-Level2.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+> tictoc::toc()
+3.94 sec elapsed
+> ## Process L2 to L3 ##
+> tictoc::tic()
+> wambaugh2019.red.L3 <- invitroTKstats::calc_fup_red_point(
++   data.in = wambaugh2019.red.L2,
++   sig.figs = NULL,
++   output.res = TRUE,
++   FILENAME = "Wambaugh2019_regen2025",
++   OUTPUT.DIR = here::here("data")
++ )
+[1] "4-Hydroxytamoxifen f_up = 0.0018657266847745"
+[1] "17beta-Trenbolone f_up = 0.228048113880187"
+[1] "5alpha-Dihydrotestosterone f_up = 0.0783825038417908"
+[1] "Propranolol f_up = 0.469293683679723"
+[1] "Monomethyl phthalate f_up = 0.687887563541143"
+[1] "Thiram f_up = 0"
+[1] "Monocrotophos f_up = 1.04205996527827"
+[1] "Clopyralid f_up = 0.683411518037388"
+[1] "Trichlorfon f_up = 0.992971002300643"
+[1] "Clodinafop-propargyl f_up = 0.0100584009416574"
+[1] "Azamethiphos f_up = 0.992625682477654"
+[1] "Daminozide f_up = 1.07047573528073"
+[1] "Difenoconazole f_up = 0.0257307530204396"
+[1] "Coumaphos f_up = 0.0126453945152152"
+[1] "Cyfluthrin f_up = 0.00721907139187082"
+[1] "Propiconazole f_up = 0.128913965325367"
+[1] "Tralkoxydim f_up = 0.470728212524194"
+[1] "Fluazifop-butyl f_up = 0.00102052601587071"
+[1] "Clopyralid-olamine f_up = 0.756634479601299"
+[1] "Trifloxystrobin f_up = 0.00966697553212129"
+[1] "Isoxaben f_up = 0.168032963954584"
+[1] "Propoxycarbazone-sodium f_up = 0.0146940438178442"
+[1] "Malaoxon f_up = 0.903291236565966"
+[1] "Methamidophos f_up = 0.805711852008274"
+[1] "Fenbuconazole f_up = 0.0458654809689556"
+[1] "Asulam f_up = 0.661964683404797"
+[1] "5HPP-33 f_up = 0.133352570130051"
+[1] "Fenoxaprop-P-ethyl f_up = 0.00190418280985723"
+[1] "Basic Blue 7 f_up = 2.39071396919573e-06"
+[1] "2-Chloro-4-phenylphenol f_up = 0.0119688966780527"
+[1] "2,4-Dihydroxybenzophenone f_up = 0.0412930302445889"
+[1] "Trinexapac-ethyl f_up = 0.275401204316409"
+[1] "4,4'-Methylenedianiline f_up = 0.435497375984662"
+[1] "2,2',4,4'-Tetrahydroxybenzophenone f_up = 0.130421094736795"
+[1] "Endothal f_up = 0.985668729837181"
+[1] "Picloram f_up = 0.551099206523844"
+[1] "Cyazofamid f_up = 0.173099473297356"
+[1] "2,5-Di-tert-butylbenzene-1,4-diol f_up = 0.356953831703783"
+[1] "meso-Hexestrol f_up = 0.00850805589654059"
+[1] "Bisphenol AF f_up = 0.00987922416906248"
+[1] "Nicotine f_up = 0.846132826875098"
+[1] "N,N,N-Trimethyl(oxiran-2-yl)methanaminium chloride f_up = 0.267991302672049"
+[1] "Triflumizole f_up = 0.0135153443733303"
+[1] "Methomyl f_up = 0.920794342974242"
+[1] "Mevinphos f_up = 0.917984298345242"
+[1] "S-Bioallethrin f_up = 0.00322292848091296"
+[1] "Pyrithiobac-sodium f_up = 0.0987237898069986"
+[1] "Diquat dibromide monohydrate f_up = 1.09459159255507"
+[1] "4,4',4''-Ethane-1,1,1-triyltriphenol f_up = 0.0530231591638719"
+[1] "17alpha-Estradiol f_up = 0.159834552400841"
+[1] "Darbufelone mesylate f_up = 0.0057598347441693"
+[1] "CJ-013610 f_up = 0.10623146228657"
+[1] "SB236057A f_up = 0.0276863606614835"
+[1] "SSR241586 f_up = 0.00942616368150015"
+[1] "Tamoxifen citrate f_up = 0.000584712912069355"
+[1] "Quercetin f_up = 0.0242911550120646"
+[1] "Diethylstilbestrol f_up = 0.0186933806519688"
+[1] "Testosterone propionate f_up = 0.00560111853497778"
+[1] "17beta-Estradiol f_up = 0.0724551155037305"
+[1] "3,3',5,5'-Tetrabromobisphenol A f_up = 6.58706254445763e-05"
+[1] "4-Nonylphenol, branched f_up = 0.0864062259599957"
+[1] "Daidzein f_up = 0.123999308757887"
+[1] "Norethindrone f_up = 0.118190529849653"
+[1] "Estrone f_up = 0.0534585044706206"
+[1] "17-Methyltestosterone f_up = 0.0601291857316972"
+[1] "Hexachlorocyclopentadiene f_up = 0.106554162233565"
+[1] "C8-18-Alkydimethylbenzyl ammonium chlorides f_up = 0.0116205021671132"
+[1] "Fenpyroximate (Z,E) f_up = 0.000345177074218981"
+[1] "Fulvestrant f_up = 0.000415534159797931"
+[1] "Denatonium saccharide f_up = 0.743346148482446"
+[1] "Warfarin f_up = 0.0501790469234583"
+[1] "Diphenolic acid f_up = 0.260470702822868"
+[1] "2,2'-Methylenebis(4-methyl-6-tert-butylphenol) f_up = 6.32592890027513e-05"
+[1] "4,4'-Sulfonyldiphenol f_up = 0.149263530525167"
+[1] "4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline f_up = 0.00018327883842977"
+[1] "1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane f_up = 0.00548422003881374"
+[1] "Dichlorophen f_up = 0.00711575385846694"
+[1] "2-Hydroxy-4-methoxybenzophenone f_up = 0.0163023911114692"
+[1] "2,2',6,6'-Tetrachlorobisphenol A f_up = 0.000453097810554078"
+[1] "Sulisobenzone f_up = 0.0162123591909089"
+[1] "Norgestrel f_up = 0.115926803881872"
+[1] "Bisphenol F f_up = 0.128039928981444"
+[1] "Disulfoton f_up = 0.255403044047676"
+[1] "Acifluorfen f_up = 0.0302172624302025"
+[1] "Chlorpropham f_up = 0.469177859405059"
+[1] "BisOPP-A f_up = 0.57089444377656"
+[1] "Phenol red f_up = 0.308959608325102"
+[1] "2,2'-Methylenebis(ethyl-6-tert-butylphenol) f_up = 1.06494370182241e-05"
+[1] "Pirimiphos-methyl f_up = 0.00668424634783089"
+[1] "2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid f_up = 0.0157306491229444"
+[1] "2-(4-Hydroxybenzyl)phenol f_up = 0.108640843463948"
+[1] "4-Nitrophenol f_up = 0.346451211645803"
+[1] "2,4,4'-Trihydroxybenzophenone f_up = 0.0644766457683136"
+[1] "Diisobutyl phthalate f_up = 0.202645360769172"
+[1] "PFDA f_up = 0.000657767465389007"
+[1] "Benzyl butyl phthalate f_up = -2.84895482297201"
+[1] "Perfluoroundecanoic acid f_up = 0.0001346532144841"
+[1] "3-Phenoxybenzoic acid f_up = 0.0073940039611463"
+[1] "Phenolphthalin f_up = 0.0213677767913564"
+[1] "MEHP f_up = 0.452549109599555"
+[1] "FD&C Green No. 3 f_up = 0.0542906799125469"
+[1] "Exifone f_up = 0.227345651361243"
+[1] "Bromocresol green sodium salt f_up = 0.00267605168894412"
+[1] "Tetrabromophenolphthalein ethyl ester f_up = 0.0163864592042318"
+[1] "Phenol Red sodium salt f_up = 0.234579092827035"
+[1] "Chlorotrianisene f_up = 0.000289815795617601"
+[1] "p-Xylenol blue f_up = 0.0741600722376406"
+[1] "Tetrahydrocurcumin f_up = 0.149595971099695"
+[1] "Acibenzolar-S-methyl f_up = 0.0495604537367783"
+[1] "2-Mercaptobenzothiazole f_up = 0.052511415174944"
+[1] "Bisdemethoxycurcumin f_up = 0.000106054041722216"
+[1] "Curcumin f_up = 0.000168849228336827"
+[1] "(6)-Gingerol f_up = 0.267857620993331"
+[1] "CP-634384 f_up = 0.0178387096449648"
+[1] "Octyl gallate f_up = 1.67243826001148"
+[1] "Triglycidyl isocyanurate f_up = 0.737701800122023"
+[1] "Propyl gallate f_up = 0.0501776450237131"
+[1] "Folic acid f_up = 0.412810824139846"
+[1] "5-Amino-2-methylphenol f_up = 0.78442576854928"
+[1] "CP-671305 f_up = 0.0946608041880898"
+[1] "4-Nitroaniline f_up = 0.831876825923787"
+[1] "CP-544439 f_up = 0.262767599242179"
+[1] "FR900409 f_up = -0.00245327484210531"
+[1] "Cymoxanil f_up = 0.676178438318395"
+[1] "Diflubenzuron f_up = 0.0424483665775986"
+[1] "Tris(2-chloroethyl) phosphate f_up = 0.694962574450521"
+[1] "Clotrimazole f_up = 0.0256111575897864"
+[1] "4-Chloroanulline f_up = 0.485972587188267"
+[1] "Isopropalin f_up = 0.000113955225820135"
+[1] "Chlorhexidine diacetate f_up = 0.00304790263311586"
+[1] "Phenothiazine f_up = 0.0104244461741493"
+[1] "Minocycline hydrochloride f_up = 0.427912341315201"
+[1] "Diphenyl phthalate f_up = 0.766867309347417"
+[1] "Dodecyltrimethylammonium chloride f_up = 0.110231795902625"
+[1] "NA f_up = 0.205409847420445"
+[1] "2-Amino-5-azotoluene f_up = 0.00560842092676648"
+[1] "Tolazamide f_up = 0.0824014747880762"
+[1] "Sodium 2-mercaptobenzothiolate f_up = 0.0851115435444998"
+[1] "2-Ethyl-3-hydroxy-4H-pyran-4-one f_up = 0.686241566446077"
+[1] "3-Dimethylaminophenol f_up = 0.365041883452895"
+[1] "4-Nitrosodiphenylamine f_up = 0.381256971108712"
+[1] "2-Chloro-N-phenylacetamide f_up = 0.609167226554709"
+[1] "N-Phenyl-1-naphthylamine f_up = 0.000408889661266852"
+[1] "Benzocaine f_up = 0.512559349905419"
+[1] "Sulfaquinoxaline f_up = 0.00528251696185369"
+[1] "Fenuron f_up = 0.795205241535746"
+[1] "C.I. Solvent Yellow 14 f_up = 0.00128660649137783"
+[1] "4-Hexylanilline f_up = 0.0121698933624327"
+[1] "Auramine hydrochloride f_up = 0.222790961619029"
+[1] "4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)phenyl]aniline f_up = 0.000609596383056247"
+[1] "Methylene blue f_up = 0.557713407943235"
+[1] "C.I. Disperse Orange 37 f_up = 0.000966094689479361"
+[1] "Enterolactone f_up = 0.133133704619764"
+[1] "Oleyl sarcosine f_up = 0.001413248993696"
+[1] "Chlorophacinone f_up = 0.00174152643189555"
+[1] "4-Butylaniline f_up = 0.143467646114745"
+[1] "4-Propylanilline f_up = 0.241387781063648"
+[1] "4-tert-Butylaniline f_up = 0.316285097599222"
+[1] "Laurocapram f_up = 5.70454127041007e-05"
+[1] "Pebulate f_up = 0.0167398478657075"
+[1] "Morin hydrate f_up = 0.0919482143325207"
+[1] "3,3'-Dimethylbenzidine dihydrochloride f_up = 0.233106379832416"
+[1] "Lauryl gallate f_up = 0.00448798172274613"
+[1] "4-Butyloxyaniline f_up = 0.363314994057042"
+[1] "4-Hexyloxyanilline f_up = 0.0696263629963495"
+[1] "3-Iodo-2-propynyl-N-butylcarbamate f_up = 4.56951724526847"
+[1] "Fluorescein f_up = 0.244658227567434"
+[1] "3,5-Dichloroaniline f_up = 0.140018173087398"
+[1] "Nordihydroguaiaretic acid f_up = 0.0344259595337556"
+[1] "Apomorphine hydrochloride hydrate f_up = 0.187951675681325"
+[1] "3,5,3'-Triiodothyronine f_up = 0.00827717630889059"
+[1] "Cyclophosphamide monohydrate f_up = 0.841392447325522"
+[1] "Triphenylphosphine oxide f_up = 0.252457732570886"
+[1] "4-Ethoxyaniline f_up = 0.723286519245672"
+[1] "Leucomalachite green f_up = 0.000434132004236025"
+[1] "Sulfamethazine f_up = 0.325980008687307"
+[1] "4-Anilinophenol f_up = 0.115429662886734"
+[1] "Levothyroxine f_up = 0.0141370627563711"
+[1] "4-Aminobenzoic acid f_up = 0.901361009164251"
+[1] "Resveratrol f_up = 0.0972310465788876"
+[1] "3-Chloro-4-methylaniline f_up = 0.231586828694505"
+[1] "Nootkatone f_up = 0.0509957331611517"
+[1] "C.I. Basic Red 9 monohydrochloride f_up = 0.376685381351385"
+[1] "Apigenin f_up = 0.00400206519060749"
+[1] "Sodium saccharin hydrate f_up = 6.04659941885196"
+[1] "Amiodarone hydrochloride f_up = 5.5825983061008e-05"
+[1] "1-(Hydroxymethyl)-5,5-dimethylhydantoin f_up = 2.01147374562649"
+[1] "Isoproterenol hydrochloride f_up = 0.542524533568689"
+[1] "Diclofenac sodium f_up = 0.340865690744011"
+[1] "Fomesafen f_up = 0.28294747726683"
+[1] "Hydrochlorothiazide f_up = 0.588550922863112"
+[1] "6-Thioguanine f_up = 4.15065971376919"
+[1] "Bispyribac-sodium f_up = 0.0261542440321714"
+[1] "Methotrexate f_up = 0.630383377905991"
+[1] "Famoxadone f_up = 0.00596903008543239"
+[1] "Hydramethylnon f_up = 0.000265572484898685"
+[1] "Dexamethasone sodium phosphate f_up = 0.156687632219285"
+[1] "Nitrofurantoin f_up = 0.516510885991793"
+[1] "Chlorpromazine hydrochloride f_up = 0.0616231154430897"
+[1] "Mifepristone f_up = 0.0481456994656197"
+[1] "Azathioprine f_up = 0.573362096606359"
+[1] "FD&C Yellow 6 f_up = 0.0525754954375877"
+[1] "Raloxifene hydrochloride f_up = 0.0301873158087021"
+[1] "Aspirin f_up = 0.764694790910493"
+[1] "Nitrofurazone f_up = 0.941747683256533"
+[1] "Pioglitazone hydrochloride f_up = 0.0301230804487229"
+[1] "Pravastatin sodium f_up = 0.451750929016502"
+[1] "Cyclopamine f_up = 0.207213730066332"
+[1] "Fenoxaprop-(2S)-ethyl f_up = 0.00255574957308465"
+[1] "Caprolactam f_up = 0.842520991425908"
+[1] "Nicotinic acid f_up = 0.811013576115406"
+[1] "1,2,3-Benzotriazole f_up = 0.506083984976041"
+[1] "Pentachloropyridine f_up = 0"
+[1] "Sodium dehydroacetate f_up = 0.156336022833557"
+[1] "2',3'-Dideoxyinosine f_up = 1.29708485909434"
+[1] "4-Chloro-1,2-diaminobenzene f_up = 0.562060790207799"
+[1] "Corticosterone f_up = 0.297063988847819"
+[1] "Procymidone f_up = 0.107971768745143"
+[1] "1-Dodecyl-2-pyrrolidinone f_up = 0.00249865775261016"
+[1] "Cyproterone acetate f_up = 0.119355562470625"
+[1] "3-Methylanulline f_up = 0.767580913523951"
+[1] "4-Pentylanulline f_up = 0.0304548279681113"
+[1] "Methyl 2-aminobenzoate f_up = 0.313358722306529"
+[1] "Indomethacin f_up = 0.016216679086399"
+[1] "Biochanin A f_up = 0.0565489993926918"
+[1] "Econazole nitrate f_up = 0.00376497780583845"
+[1] "Acetophenone f_up = 0.479484968124434"
+[1] "Trelanserin f_up = 0.143722141090992"
+[1] "Ilepatril f_up = 0.467318993357137"
+[1] "Enadoline f_up = 0.47763681882205"
+[1] "Zenarestat f_up = 0.0354470289843974"
+[1] "Besonprodil f_up = 0.115768229684794"
+[1] "Elzasonan f_up = 0.0713030626094306"
+[1] "Dibutyl decanedioate f_up = 0"
+[1] "dl-Norgestrel f_up = 0.103256041958663"
+[1] "Surinabant f_up = 0.000418822328197811"
+[1] "Ingliforib f_up = 0.0738219241872141"
+[1] "N-Methyl-2-pyrrolidone f_up = 0.916731817758228"
+[1] "2,6,10-Trimethyl-2,6,10-triazaundecane f_up = 0.193322151022873"
+[1] "Chrysin f_up = 0.00635913410128565"
+[1] "Melengestrol acetate f_up = 0.1009347509497"
+[1] "Hydroxyprogesterone caproate f_up = 0.00643758261746264"
+[1] "Theobromine f_up = 1.185908752698"
+[1] "Triethylene glycol diacetate f_up = 1.04154635987526"
+[1] "2,3-Dinitrotoluene f_up = 0.340552126196198"
+[1] "Dipentyl phthalate f_up = 0.0328931626319326"
+[1] "Butyl benzoate f_up = 0.332090762369045"
+[1] "Cytarabine hydrochloride f_up = 1.29383982785185"
+[1] "Methenamine f_up = 0.268086973005945"
+[1] "Allura Red C.I.16035 f_up = 0.00707840314757361"
+[1] "2-Aminoanthraquinone f_up = 0.122851372923293"
+[1] "Bromocriptine mesylate f_up = 0.0155556581388886"
+[1] "Piragliatin f_up = 0.795495987950529"
+[1] "N-Vinyl-2-pyrrolidone f_up = Inf"
+[1] "4-Hydroxy-3-methoxybenzaldehyde f_up = 0.551357305843303"
+[1] "Geranyl acetate f_up = 0.353934613278893"
+[1] "Benzyl salicylate f_up = 0"
+[1] "Benzal chloride f_up = 0"
+[1] "Dimethipin f_up = 1.2305674070479"
+[1] "Cariporide mesylate f_up = 0.648040822484916"
+[1] "Acetyl tributyl citrate f_up = 0.00750063267560739"
+[1] "1,2-Dimethyl-3-nitrobenzene f_up = 0"
+[1] "2,2,4-Trimethyl-1,3-pentanediol diisobutyrate f_up = 0.146561458675081"
+[1] "Carabersat f_up = 0.369590067741018"
+[1] "1-Benzylquinolinium chloride f_up = 0.758750622144318"
+[1] "Nelivaptan f_up = 0.132478172619472"
+[1] "6-Methylquinoline f_up = 0.215243087603893"
+[1] "17alpha-Hydroxyprogesterone f_up = 0.238812736049666"
+[1] "N-Ethylaniline f_up = 0.398730887232853"
+[1] "Secbumeton f_up = 0.125919432797405"
+[1] "N,N-Dimethyldodecan-1-amine f_up = 0.00945394098175325"
+[1] "Dipropyl 2,5-pyridinedicarboxylate f_up = 13.7840106974509"
+[1] "Triazophos f_up = 0.134011346960634"
+[1] "Metamitron f_up = 0.894953791845098"
+[1] "Ipconazole f_up = 0.033538309013184"
+[1] "Hydroxyflutamide f_up = 0.39809102243656"
+[1] "Methyl red f_up = 0.102898788887203"
+[1] "N-Benzyladenine f_up = 0.278529737124878"
+[1] "2-Ethylhexyl 4-(dimethylamino)benzoate f_up = 0.000539115861090265"
+[1] "Monolinuron f_up = 0.410023342129776"
+[1] "Isoproturon f_up = 0.467419762466276"
+[1] "1,4-Bis(N-isopropylamino)anthraquinone f_up = 0.000870105713773682"
+[1] "Diphenamid f_up = 0.44765494865495"
+[1] "Deethylatrazine f_up = 0.742433472536511"
+[1] "Isofenphos f_up = 0.0130776592223572"
+[1] "Melatonin f_up = 0.70068645686043"
+[1] "Cloquintocet-mexyl f_up = 0.00100426147304814"
+[1] "Epoxiconazole f_up = 0.131890715645968"
+[1] "4,4'-Methylenebis(2,6-diethylaniline) f_up = 0.00751051014307567"
+[1] "Triamterene f_up = 0.522838132129125"
+[1] "Loratadine f_up = 0.0114708777232696"
+[1] "Catechol f_up = 0.22827179906827"
+[1] "Rhodamine 6G f_up = 0.145155106081717"
+[1] "Triethylene glycol dimethyl ether f_up = 0.882252031878719"
+[1] "4-Methylbenzophenone f_up = 0.0303658565161929"
+[1] "2-Mercaptobenzimidazole f_up = 0.571434253537136"
+[1] "Nilutamide f_up = 0.497583112901414"
+[1] "3,3'-Dimethoxybenzidine dihydrochloride f_up = 0.286292629414532"
+[1] "Naphthalen-2-yl 2-aminobenzoate f_up = 0.00205029430335904"
+[1] "Tembotrione f_up = 0.16248140644911"
+[1] "Benzylparaben f_up = 0.0140651021224711"
+[1] "Methyl 2,4-dihydroxy-3,6-dimethylbenzoate f_up = 0.089437135826145"
+[1] "Phenobarbital sodium f_up = 0.546851597405538"
+[1] "Tris(2,3-dibromopropyl) phosphate f_up = 0.0244073783733393"
+[1] "2,4,5-Trichlorophenoxyacetic acid f_up = 0.0296961114018974"
+[1] "Fabesetron hydrochloride f_up = 0.0738819213520323"
+[1] "Bicalutamide f_up = 0.0929127322999146"
+[1] "Sodium 4-nitrophenolate f_up = 0.248411128657563"
+[1] "E-Cinnamic acid f_up = 0.120669223055529"
+[1] "Phenylparaben f_up = 0.070392515468205"
+[1] "all-trans-Retinoic acid f_up = 0.00293415248977555"
+[1] "Azobenzene f_up = 1.31035713585255"
+[1] "1,2-Diphenylhydrazine f_up = 0.73262087660032"
+[1] "Carminic acid f_up = 0.0768641476749341"
+[1] "4,4'-Bipyridine f_up = 0.620755043712165"
+[1] "Eosin f_up = 0.0304373218471471"
+[1] "Flufenpyr-ethyl f_up = 8.0295464551272"
+[1] "Bromcresol green f_up = 0.00342305495142127"
+[1] "3,5-Dichlorosalicyl-3,4-dichloroanullide f_up = 6.15248099551953e-05"
+[1] "Propachlor f_up = 0.611947109691186"
+[1] "C.I. Solvent Orange 7 f_up = 0.000345951184307693"
+[1] "Michler's ketone f_up = 0.0218007027566834"
+[1] "Bensulfuron-methyl f_up = 0.0162408972241885"
+[1] "Fenofibrate f_up = 0.000889263310676632"
+[1] "Tamoxifen f_up = 0.000264661090368738"
+[1] "Tolcapone f_up = 0.00659358532069759"
+[1] "4,4'-(9H-Fluorene-9,9-diyl)diphenol f_up = 0.000808877046004365"
+[1] "Hexachlorophene f_up = 6.19241312600707e-05"
+[1] "Malathion f_up = 0.34009304542817"
+[1] "p,p'-DDE f_up = 0.370065687029654"
+[1] "Phenanthrene f_up = 0.620304410807172"
+[1] "Ethion f_up = 0.000695933405574918"
+[1] "1,2,4-Trichlorobenzene f_up = 0.24822939474144"
+[1] "Cotinine f_up = 0.407494710480984"
+[1] "2-Naphthalenol f_up = 0.273970314188551"
+[1] "1-Hydroxypyrene f_up = 0.496218843378457"
+[1] "Octabenzone f_up = 0.000113586072251657"
+[1] "Oxyphenisatin f_up = 0.0732658542090429"
+[1] "2,3,4-Trihydroxbenzophenone f_up = 0.046254146632294"
+[1] "Clorophene f_up = 0.576173660847328"
+[1] "2-(2H-Benzotriazol-2-yl)-4,6-bis(1-methyl-1-phenylethyl)phenol f_up = 0.372081182746807"
+[1] "Sulfotepp f_up = 0.0447823443946168"
+[1] "Amitraz f_up = 9.3482342801118e-05"
+[1] "Clomipramine hydrochloride f_up = 0.0948944530915691"
+[1] "Prometon f_up = 0.0980735562289921"
+[1] "2',4',5',7'-Tetrabromofluorescein f_up = 0.000773138746249105"
+[1] "Sulfluramid f_up = 9.06659554981876e-05"
+[1] "Haloxyfop-methyl f_up = 0.010650229220725"
+[1] "Benomyl f_up = 0.294123885536698"
+[1] "Propanull f_up = 0.174796910967492"
+[1] "Phosalone f_up = 0.0072203110538995"
+[1] "C.I. Solvent Red 49 f_up = 0.154411633768202"
+[1] "Oxadiazon f_up = 0.00608350678728454"
+[1] "Paraoxon f_up = 0.761140482599499"
+[1] "Aldoxycarb f_up = 0.981742561639625"
+[1] "PharmaGSID_48510 f_up = 0.0287941131489261"
+[1] "PharmaGSID_48505 f_up = 0.0232821319059216"
+[1] "2-Methylaniline f_up = 0.481959898491131"
+[1] "4-Pentylaniline f_up = 0.0270072155728874"
+[1] "Dapsone f_up = 0.415785159985316"
+[1] "PD-0333941 f_up = 0.00328272958138109"
+[1] "Tetracycline f_up = 0.563009272597713"
+[1] "4-Methylaniline f_up = 0.451191076573416"
+[1] "3-Methylaniline f_up = 0.478104497755297"
+[1] "CI-1044 f_up = 0.308255691929794"
+[1] "SSR162369 f_up = 0.690106162020729"
+[1] "Hydroxyurea f_up = 0.238407558511127"
+[1] "Adriamycin hydrochloride f_up = 0.268201339391919"
+A level-3 file named Wambaugh2019_regen2025-fup-RED-Level3.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+[1] "Fraction unbound values calculated for 368 chemicals."
+[1] "Fraction unbound values calculated for 368 measurements."
+Warning messages:
+1: In invitroTKstats::calc_fup_red_point(data.in = wambaugh2019.red.L2,  :
+  The following chemical(s) were ignored due to missing PBS and/or Plasma data: Thiobencarb, Nitrapyrin, 4-Chloro-2-methylaniline, Dihexyl phthalate, Triacetin, Clofibrate
+
+2: In invitroTKstats::calc_fup_red_point(data.in = wambaugh2019.red.L2,  :
+  Plasma and non-plasma blank samples are missing for the following chemical(s): 4-Hydroxytamoxifen, 17beta-Trenbolone, 5alpha-Dihydrotestosterone, Thiram, Monocrotophos, Clopyralid, Trichlorfon, Azamethiphos, Daminozide, Difenoconazole, Cyfluthrin, Propiconazole, Tralkoxydim, Clopyralid-olamine, Isoxaben, Propoxycarbazone-sodium, Malaoxon, Methamidophos, Fenbuconazole, Asulam, Fenoxaprop-P-ethyl, Basic Blue 7, 2-Chloro-4-phenylphenol, Trinexapac-ethyl, 4,4'-Methylenedianiline, Endothal, Cyazofamid, 2,5-Di-tert-butylbenzene-1,4-diol, Nicotine, N,N,N-Trimethyl(oxiran-2-yl)methanaminium chloride, Triflumizole, Methomyl, Mevinphos, S-Bioallethrin, Pyrithiobac-sodium, Diquat dibromide monohydrate, 4,4',4''-Ethane-1,1,1-triyltriphenol, 17alpha-Estradiol, Darbufelone mesylate, CJ-013610, SB236057A, SSR241586, Quercetin, Diethylstilbestrol, 17beta-Estradiol, 4-Nonylphenol, branched, Estrone, 17-Methyltestosterone, Hexachlorocyclopentadiene, C8-18-Alkydimethylbenzyl ammonium chlorides, Fulvestra [... truncated]
+3: In invitroTKstats::calc_fup_red_point(data.in = wambaugh2019.red.L2,  :
+  Missing non-plasma blanks for chemical(s): Propranolol, Monomethyl phthalate, Clodinafop-propargyl, Coumaphos, Fluazifop-butyl, Trifloxystrobin, 5HPP-33, 2,4-Dihydroxybenzophenone, 2,2',4,4'-Tetrahydroxybenzophenone, Picloram, meso-Hexestrol, Bisphenol AF, Tamoxifen citrate, Testosterone propionate, 3,3',5,5'-Tetrabromobisphenol A, Daidzein, Norethindrone, Fenpyroximate (Z,E), Warfarin, Diphenolic acid, 2,2'-Methylenebis(4-methyl-6-tert-butylphenol), 4,4'-Sulfonyldiphenol, 4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline, 1,1-Bis(3-cyclohexyl-4-hydroxyphenyl)cyclohexane, Dichlorophen, 2-Hydroxy-4-methoxybenzophenone, 2,2',6,6'-Tetrachlorobisphenol A, Sulisobenzone, Norgestrel, Bisphenol F, Disulfoton, Acifluorfen, Chlorpropham, BisOPP-A, Phenol red, 2,2'-Methylenebis(ethyl-6-tert-butylphenol), Pirimiphos-methyl, 2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid, 2-(4-Hydroxybenzyl)phenol, 4-Nitrophenol, 2,4,4'-Trihydroxybenzophenone, Diisobutyl phthalate, PFDA, Benzyl butyl phthalat [... truncated]
+> tictoc::toc()
+1.56 sec elapsed
+> #------------------------------------------------------------------------------#
+> ## Save Data ##
+> # save the primary data
+> save(
++   wambaugh2019.red.L0,
++   wambaugh2019.red.L1,
++   wambaugh2019.red.L2,
++   wambaugh2019.red.L3,
++   file = here::here("data/Wambaugh2019_regen2025_fupRED_L1-3.RData")
++ )
+> # save supplementary files
+> save(
++   EC_wambaugh2019.red,
++   file = here::here("data/Wambaugh2019_regen2025_fupRED_supp.RData")
++ )
+> #------------------------------------------------------------------------------#
+> ## Session Information ##
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1            tictoc_1.2.1          stringr_1.5.1        
+[4] magrittr_2.0.3        dplyr_1.1.4           invitroTKstats_0.0.13
+
+loaded via a namespace (and not attached):
+ [1] vctrs_0.6.5        cli_3.6.5          rlang_1.1.6        stringi_1.8.7     
+ [5] generics_0.1.4     glue_1.8.0         rprojroot_2.0.4    stats4_4.4.2      
+ [9] readxl_1.4.5       scales_1.4.0       grid_4.4.2         cellranger_1.1.0  
+[13] tibble_3.3.0       lifecycle_1.0.4    compiler_4.4.2     coda_0.19-4.1     
+[17] RColorBrewer_1.1-3 pkgconfig_2.0.3    rstudioapi_0.17.1  runjags_2.2.2-5   
+[21] farver_2.1.2       lattice_0.22-7     R6_2.6.1           tidyselect_1.2.1  
+[25] pillar_1.10.2      Rdpack_2.6.4       parallel_4.4.2     rbibutils_2.3     
+[29] tools_4.4.2        gtable_0.3.6       ggplot2_3.5.2     
+> Sys.time()
+[1] "2025-07-09 15:08:12 EDT"
+> #------------------------------------------------------------------------------#
+> 
+> proc.time()
+   user  system elapsed 
+   1.67    0.12   15.67 

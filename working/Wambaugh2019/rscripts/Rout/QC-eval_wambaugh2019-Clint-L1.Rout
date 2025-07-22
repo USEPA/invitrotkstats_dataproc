@@ -1,0 +1,343 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #=============================================================================#
+> ## Title: QC Level-1 Wambaugh 2019 Clint
+> #=============================================================================#
+> ## R Packages ##
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> ## Load in Data ##
+> load(here::here("data/Wambaugh2019_regen2025_Clint_L1-3.RData"),verbose = TRUE)
+Loading objects:
+  wambaugh2019.clint.L0
+  wambaugh2019.clint.L1
+  wambaugh2019.clint.L2
+  wambaugh2019.clint.L3
+> #=============================================================================#
+> ## Items to Check:
+> ##  1) Determine if there are any columns with missing information (NA's).
+> ##      a) Are the columns with missing information handled by the Clint estimation.
+> ##      b) For the columns with missing information not handled by the Clint
+> ##         estimation, determine the samples that need to be 'unverified'.
+> ##  2) Determine if there are any chemicals that do not have sufficient sample
+> ##     type information.
+> ##  3) Determine if there are any responses reported as "infinite", and
+> ##     if YES then identify them to be 'unverified'.
+> #=============================================================================#
+> ## Investigate L1 Data ##
+> sapply(wambaugh2019.clint.L1,class) # determine the class of each column
+      Lab.Sample.Name                  Date         Compound.Name 
+          "character"           "character"           "character" 
+               DTXSID     Lab.Compound.Name           Sample.Type 
+          "character"           "character"           "character" 
+      Dilution.Factor           Calibration             ISTD.Name 
+            "numeric"           "character"           "character" 
+            ISTD.Conc             ISTD.Area                  Area 
+            "numeric"             "numeric"             "numeric" 
+      Analysis.Method   Analysis.Instrument   Analysis.Parameters 
+          "character"           "character"           "character" 
+                 Note           Level0.File          Level0.Sheet 
+          "character"           "character"           "character" 
+                 Time    Test.Compound.Conc     Test.Nominal.Conc 
+            "numeric"             "numeric"             "numeric" 
+          Hep.Density Biological.Replicates  Technical.Replicates 
+            "numeric"             "numeric"             "numeric" 
+             Response 
+            "numeric" 
+> summary(wambaugh2019.clint.L1) # obtain a summary of values in each column
+ Lab.Sample.Name        Date           Compound.Name         DTXSID         
+ Length:22898       Length:22898       Length:22898       Length:22898      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ Lab.Compound.Name  Sample.Type        Dilution.Factor Calibration       
+ Length:22898       Length:22898       Min.   :1       Length:22898      
+ Class :character   Class :character   1st Qu.:1       Class :character  
+ Mode  :character   Mode  :character   Median :1       Mode  :character  
+                                       Mean   :1                         
+                                       3rd Qu.:1                         
+                                       Max.   :1                         
+                                                                         
+  ISTD.Name           ISTD.Conc   ISTD.Area             Area          
+ Length:22898       Min.   :1   Min.   :       0   Min.   :     -789  
+ Class :character   1st Qu.:1   1st Qu.:   51442   1st Qu.:     1723  
+ Mode  :character   Median :1   Median :  133178   Median :    56042  
+                    Mean   :1   Mean   :  538838   Mean   :  3612451  
+                    3rd Qu.:1   3rd Qu.:  390061   3rd Qu.:   679732  
+                    Max.   :1   Max.   :46370000   Max.   :416800000  
+                                NA's   :592        NA's   :1008       
+ Analysis.Method    Analysis.Instrument Analysis.Parameters     Note          
+ Length:22898       Length:22898        Length:22898        Length:22898      
+ Class :character   Class :character    Class :character    Class :character  
+ Mode  :character   Mode  :character    Mode  :character    Mode  :character  
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+ Level0.File        Level0.Sheet            Time      Test.Compound.Conc
+ Length:22898       Length:22898       Min.   :  0    Min.   : 1.000    
+ Class :character   Class :character   1st Qu.: 15    1st Qu.: 1.000    
+ Mode  :character   Mode  :character   Median : 30    Median : 1.000    
+                                       Mean   : 45    Mean   : 5.031    
+                                       3rd Qu.: 60    3rd Qu.:10.000    
+                                       Max.   :120    Max.   :10.000    
+                                       NA's   :3877   NA's   :1         
+ Test.Nominal.Conc  Hep.Density  Biological.Replicates Technical.Replicates
+ Min.   : 1.000    Min.   :0.5   Min.   :1             Min.   :1           
+ 1st Qu.: 1.000    1st Qu.:0.5   1st Qu.:1             1st Qu.:1           
+ Median : 1.000    Median :0.5   Median :1             Median :1           
+ Mean   : 5.031    Mean   :0.5   Mean   :1             Mean   :1           
+ 3rd Qu.:10.000    3rd Qu.:0.5   3rd Qu.:1             3rd Qu.:1           
+ Max.   :10.000    Max.   :0.5   Max.   :1             Max.   :1           
+ NA's   :1                                                                 
+    Response      
+ Min.   :-0.0044  
+ 1st Qu.: 0.0173  
+ Median : 0.3981  
+ Mean   :    Inf  
+ 3rd Qu.: 3.9171  
+ Max.   :    Inf  
+ NA's   :1121     
+> 
+> ## Missing Value Check ##
+> sapply(wambaugh2019.clint.L1,anyNA) %>% .[which(.)] # determine the NA's
+         ISTD.Area               Area               Time Test.Compound.Conc 
+              TRUE               TRUE               TRUE               TRUE 
+ Test.Nominal.Conc           Response 
+              TRUE               TRUE 
+>   # ISTD.Area - Currently no issue if ISTD.Area is missing.
+>   # Area - Currently no issue if Area is missing.
+>   # Time - If "Time" is missing for a non-"Blank" sample, then there is a problem.
+>   # Test.Compound.Conc - Currently no issue if Test.Compound.Conc is missing.
+>   # Test.Nominal.Conc - Issues if any Test.Nominal.Conc values are missing.
+>   # Response - Currently no issue if Response is missing.
+> 
+> # identify the non-Blank samples with a missing 'Time'
+> dplyr::filter(wambaugh2019.clint.L1,is.na(Time)) %>% 
++   dplyr::filter(.,Sample.Type != "Blank")
+ [1] Lab.Sample.Name       Date                  Compound.Name        
+ [4] DTXSID                Lab.Compound.Name     Sample.Type          
+ [7] Dilution.Factor       Calibration           ISTD.Name            
+[10] ISTD.Conc             ISTD.Area             Area                 
+[13] Analysis.Method       Analysis.Instrument   Analysis.Parameters  
+[16] Note                  Level0.File           Level0.Sheet         
+[19] Time                  Test.Compound.Conc    Test.Nominal.Conc    
+[22] Hep.Density           Biological.Replicates Technical.Replicates 
+[25] Response             
+<0 rows> (or 0-length row.names)
+> 
+> # identify the samples with a missing 'Test.Nominal.Conc'
+> dplyr::filter(wambaugh2019.clint.L1,is.na(Test.Nominal.Conc))
+  Lab.Sample.Name   Date                  Compound.Name        DTXSID
+1 1444917_1╡M_0_3 MMDD19 5-Heptyldihydro-2(3H)-furanone DTXSID4034287
+  Lab.Compound.Name Sample.Type Dilution.Factor  Calibration
+1           1444917        Cvst               1 Wambaugh2019
+                             ISTD.Name ISTD.Conc ISTD.Area Area Analysis.Method
+1 Bucetin, Propranolol, and Diclofenac         1      3660  433             TBD
+  Analysis.Instrument Analysis.Parameters Note                 Level0.File
+1                 TBD                 TBD      toxsci-19-0394-File012.xlsx
+        Level0.Sheet Time Test.Compound.Conc Test.Nominal.Conc Hep.Density
+1 SupplementalTable3    0                 NA                NA         0.5
+  Biological.Replicates Technical.Replicates Response
+1                     1                    1 0.118306
+> 
+> ## Sample Type Check ##
+> # determine the counts of the required sample types & if there are any missing
+> missing.sample.types <- dplyr::group_by(wambaugh2019.clint.L1,DTXSID) %>%
++   dplyr::select(.,c(DTXSID,Sample.Type)) %>% 
++   dplyr::summarise(.,
++                    Blank.Count = sum(Sample.Type == "Blank"),
++                    Cvst.Count = sum(Sample.Type == "Cvst")) %>% 
++   dplyr::mutate(.,
++                 Blank.Missing = (Blank.Count == 0),
++                 Cvst.Missing = (Cvst.Count == 0))
+> # filter for chemicals that have any of the required samples missing
+> missing.sample.types %>% 
++   dplyr::filter(.,Blank.Missing|Cvst.Missing)
+# A tibble: 1 × 5
+  DTXSID        Blank.Count Cvst.Count Blank.Missing Cvst.Missing
+  <chr>               <int>      <int> <lgl>         <lgl>       
+1 DTXSID5022489           3          0 FALSE         TRUE        
+> 
+> ## Infinite Response Check ##
+> # identify the samples with an infinite response
+> dplyr::filter(wambaugh2019.clint.L1,Response == "Inf")
+                        Lab.Sample.Name   Date
+1   Blank_1_Human___1_____XP5A12_Inj M3 MMDD19
+2  Blank_1_Human___1_____XP5A12_Inj M57 MMDD19
+3 Blank_1_Human___1_____XP5A12_Inj M145 MMDD19
+4   Blank_2_Human___2_____XP5B12_Inj M4 MMDD19
+5  Blank_2_Human___2_____XP5B12_Inj M58 MMDD19
+6 Blank_2_Human___2_____XP5B12_Inj M146 MMDD19
+7   Blank_3_Human___3_____XP5B12_Inj M5 MMDD19
+8  Blank_3_Human___3_____XP5B12_Inj M59 MMDD19
+9 Blank_3_Human___3_____XP5B12_Inj M147 MMDD19
+                                   Compound.Name        DTXSID
+1 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+2 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+3 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+4 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+5 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+6 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+7 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+8 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+9 2,2'-Methylenebis(4-methyl-6-tert-butylphenol) DTXSID4020870
+  Lab.Compound.Name Sample.Type Dilution.Factor  Calibration
+1        BF00174486       Blank               1 Wambaugh2019
+2        BF00174486       Blank               1 Wambaugh2019
+3        BF00174486       Blank               1 Wambaugh2019
+4        BF00174486       Blank               1 Wambaugh2019
+5        BF00174486       Blank               1 Wambaugh2019
+6        BF00174486       Blank               1 Wambaugh2019
+7        BF00174486       Blank               1 Wambaugh2019
+8        BF00174486       Blank               1 Wambaugh2019
+9        BF00174486       Blank               1 Wambaugh2019
+                             ISTD.Name ISTD.Conc ISTD.Area   Area
+1 Bucetin, Propranolol, and Diclofenac         1         0 148408
+2 Bucetin, Propranolol, and Diclofenac         1         0 139107
+3 Bucetin, Propranolol, and Diclofenac         1         0 142350
+4 Bucetin, Propranolol, and Diclofenac         1         0 153652
+5 Bucetin, Propranolol, and Diclofenac         1         0 138414
+6 Bucetin, Propranolol, and Diclofenac         1         0 140549
+7 Bucetin, Propranolol, and Diclofenac         1         0 144415
+8 Bucetin, Propranolol, and Diclofenac         1         0 129357
+9 Bucetin, Propranolol, and Diclofenac         1         0 132204
+  Analysis.Method Analysis.Instrument Analysis.Parameters Note
+1             TBD                 TBD                 TBD     
+2             TBD                 TBD                 TBD     
+3             TBD                 TBD                 TBD     
+4             TBD                 TBD                 TBD     
+5             TBD                 TBD                 TBD     
+6             TBD                 TBD                 TBD     
+7             TBD                 TBD                 TBD     
+8             TBD                 TBD                 TBD     
+9             TBD                 TBD                 TBD     
+                  Level0.File       Level0.Sheet Time Test.Compound.Conc
+1 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+2 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+3 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+4 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+5 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+6 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+7 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+8 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+9 toxsci-19-0394-File012.xlsx SupplementalTable3   NA                 10
+  Test.Nominal.Conc Hep.Density Biological.Replicates Technical.Replicates
+1                10         0.5                     1                    1
+2                10         0.5                     1                    1
+3                10         0.5                     1                    1
+4                10         0.5                     1                    1
+5                10         0.5                     1                    1
+6                10         0.5                     1                    1
+7                10         0.5                     1                    1
+8                10         0.5                     1                    1
+9                10         0.5                     1                    1
+  Response
+1      Inf
+2      Inf
+3      Inf
+4      Inf
+5      Inf
+6      Inf
+7      Inf
+8      Inf
+9      Inf
+> # determine the chemicals with an infinite response
+> dplyr::filter(wambaugh2019.clint.L1,Response == "Inf") %>% 
++   dplyr::summarise(.,unique(DTXSID))
+  unique(DTXSID)
+1  DTXSID4020870
+> # check to make sure there is sufficient samples to obtain an estimate after 
+> #   flagging the infinite responses
+> dplyr::filter(wambaugh2019.clint.L1,DTXSID == "DTXSID4020870") %>% 
++   dplyr::group_by(.,DTXSID) %>% 
++   dplyr::filter(.,Response!="Inf") %>% 
++   dplyr::select(.,c(DTXSID,Sample.Type,Response)) %>% 
++   dplyr::summarise(.,
++                    Blank.Sample.Count = sum(Sample.Type == "Blank"),
++                    Cvst.Sample.Count = sum(Sample.Type == "Cvst"))
+# A tibble: 1 × 3
+  DTXSID        Blank.Sample.Count Cvst.Sample.Count
+  <chr>                      <int>             <int>
+1 DTXSID4020870                  3                30
+> #=============================================================================#
+> ## Session Information ##
+> Sys.time()
+[1] "2025-07-09 15:17:17 EDT"
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1     stringr_1.5.1  magrittr_2.0.3 dplyr_1.1.4   
+
+loaded via a namespace (and not attached):
+ [1] utf8_1.2.6        R6_2.6.1          tidyselect_1.2.1  glue_1.8.0       
+ [5] tibble_3.3.0      pkgconfig_2.0.3   generics_0.1.4    lifecycle_1.0.4  
+ [9] cli_3.6.5         vctrs_0.6.5       withr_3.0.2       compiler_4.4.2   
+[13] rprojroot_2.0.4   rstudioapi_0.17.1 tools_4.4.2       pillar_1.10.2    
+[17] rlang_1.1.6       stringi_1.8.7    
+> #=============================================================================#
+> 
+> proc.time()
+   user  system elapsed 
+   0.31    0.01    6.37 

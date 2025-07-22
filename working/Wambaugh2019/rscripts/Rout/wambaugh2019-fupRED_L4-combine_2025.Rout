@@ -1,0 +1,129 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #------------------------------------------------------------------------------#
+> ## Combining the L4 Wambaugh2019 fup RED Data ##
+> #-----------------------------------------------------------------------------#
+> ## NOTE: This script is meant to be run programmatically via the following
+> ##  command in the bash command line terminal:
+> ##  `R CMD BATCH --vanilla wambaugh2019-fupRED_L4-combine_2025.R wambaugh2019-fupRED_L4-combine_2025_MMDDYYYY.Rout`
+> ##    (where SPLIT-X should correspond to the chemical chunk being evaluated, e.g. SPLIT-3)
+> ##    (where MMDDYYYY corresponds to the 2-digit month, 2-digit day, and 4-digit year)
+> #-----------------------------------------------------------------------------#
+> ## R Packages ##
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> #------------------------------------------------------------------------------#
+> ## Load in Data ##
+> # identify the L4 chemsplit files to read in
+> chemsplit_files <- list.files(here::here("data"),pattern = "RED.+Level4Analysis")
+> # load in the chemsplit files
+> tmp_Results <- data.frame()
+> for(i in chemsplit_files){
++   load(file = here::here("data",i),verbose = TRUE)
++   tmp_Results <- rbind.data.frame(tmp_Results,Results)
++ }
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+Loading objects:
+  Results
+> # check the number of rows in the combined Results dataset
+> nrow(tmp_Results)
+[1] 301
+> #------------------------------------------------------------------------------#
+> ## Save Data ##
+> # set up the file name for saving results
+> save_filename <- sub(x = chemsplit_files[1],pattern = "_\\d",replacement = "")
+> # reassign the combined results to 'Results'
+> assign(x = "Results",value = tmp_Results)
+> 
+> # save the combined results
+> save(
++   list = c("Results"),
++   file = here::here("data",save_filename)
++ )
+> #------------------------------------------------------------------------------#
+> ## Session Information ##
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] stringr_1.5.1  magrittr_2.0.3 dplyr_1.1.4   
+
+loaded via a namespace (and not attached):
+ [1] R6_2.6.1          tidyselect_1.2.1  glue_1.8.0        tibble_3.3.0     
+ [5] pkgconfig_2.0.3   generics_0.1.4    lifecycle_1.0.4   cli_3.6.5        
+ [9] vctrs_0.6.5       compiler_4.4.2    rprojroot_2.0.4   here_1.0.1       
+[13] rstudioapi_0.17.1 tools_4.4.2       pillar_1.10.2     rlang_1.1.6      
+[17] stringi_1.8.7    
+> Sys.time()
+[1] "2025-07-11 10:13:30 EDT"
+> #------------------------------------------------------------------------------#
+> 
+> proc.time()
+   user  system elapsed 
+   0.57    0.15    2.81 

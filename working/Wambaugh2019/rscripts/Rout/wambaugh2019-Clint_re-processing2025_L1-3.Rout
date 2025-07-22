@@ -1,0 +1,718 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #------------------------------------------------------------------------------#
+> ## Re-processing Wambaugh2019 Clint (L1-L3) ##
+> #------------------------------------------------------------------------------#
+> ## NOTE: This script is meant to be run programmatically via the following
+> ##       command in the bash command line terminal:
+> ##          `R CMD BATCH --vanilla wambaugh2019-Clint_re-processing2025.R`
+> #------------------------------------------------------------------------------#
+> ## R Packages ##
+> library(invitroTKstats)
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(tictoc)
+Warning message:
+package 'tictoc' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> ## Check Package Version ##
+> packageVersion("invitroTKstats")
+[1] '0.0.13'
+> #------------------------------------------------------------------------------#
+> ## Load in Data ##
+> #================================================================#
+> # NOTE: The 'data_dir' is the user specific path to where the    #
+> #       data is. Ideally, one would be working within an R       #
+> #       project and could utilize the "here" package for         #
+> #       relative file path identification.                       #
+> #================================================================#
+> # load in the currently utilized L0 data files - wambaugh2019.RData prepared by format-wambaugh2019*.R
+> load(here::here("raw_data/wambaugh2019.RData"),verbose = TRUE)
+Loading objects:
+  wambaugh2019.clint
+  wambaugh2019.red
+  wambaugh2019.methods
+> #------------------------------------------------------------------------------#
+> ## pre-data proc steps ##
+> #================================================================#
+> # NOTE: This is legacy data and some of the current requirements # 
+> #       were not necessary in prototype versions of the          #
+> #       invitroTKstats R package.                                #
+> #================================================================#
+> # assign the old version of the Wambaugh2019 Clint (L0) dataset to an new object
+> wambaugh2019.clint.updated <- wambaugh2019.clint
+> # change the time column to be numeric
+> wambaugh2019.clint.updated[,"Time..mins."] <- as.numeric(wambaugh2019.clint.updated[,"Time..mins."])
+Warning message:
+NAs introduced by coercion 
+> # add the sample type column
+> #   auto-assign all to "Blank", then update those with a time to "Cvst"
+> wambaugh2019.clint.updated <- dplyr::mutate(wambaugh2019.clint.updated,Sample.Type = "Blank")
+> wambaugh2019.clint.updated[!is.na(wambaugh2019.clint.updated$Time..mins.),"Sample.Type"] <- "Cvst"
+> #------------------------------------------------------------------------------#
+> ## Reassign Pre-Proc Object to L0 ##
+> wambaugh2019.clint.L0 <- wambaugh2019.clint.updated
+> #------------------------------------------------------------------------------#
+> ## Process L0 Data to L1 ##
+> tictoc::tic()
+> wambaugh2019.clint.L1 <- invitroTKstats::format_clint(
++   data.in = wambaugh2019.clint.updated,
++   FILENAME = "Wambaugh2019_regen2025",
++   sig.figs = NULL,
++   output.res = TRUE,
++   OUTPUT.DIR = here::here("data"),
++   sample.col="Sample.Name",
++   compound.col="Preferred.Name",
++   lab.compound.col="Name",
++   time.col="Time..mins.",
++   cal = "Wambaugh2019",
++   date = "MMDD19",
++   # NOTE: This is what is gathered from the "format-wambaugh2019-clint.data.R", but lists multiple 3 compounds which is not ideal.
++   istd.name = "Bucetin, Propranolol, and Diclofenac",
++   istd.conc = 1,
++   dilution = 1,
++   density = 0.5,
++   biological.replicates = 1,technical.replicates = 1,
++   analysis.method = "TBD",
++   analysis.instrument = "TBD",
++   analysis.parameters = "TBD",
++   note.col = NULL,
++   test.conc.col = "Conc",
++   test.nominal.conc.col = "Conc",
++   level0.file = "toxsci-19-0394-File012.xlsx",
++   level0.sheet = "SupplementalTable3"
++ )
+A level-1 file named Wambaugh2019_regen2025-Clint-Level1.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+23021 observations of 471 chemicals based on 471 separate measurements (calibrations).
+The following 1 chemicals have incomplete data sets:
+[1] "DTXSID5022489"
+
+> tictoc::toc()
+3.46 sec elapsed
+> ## Process L1 to L2 ##
+> # check if there are any lab sample names registered as `NA`
+> any(is.na(wambaugh2019.clint.L1$Lab.Compound.Name))
+[1] TRUE
+> # remove any samples with Lab.Compound.Name == `NA`
+> #   if there are missing Lab.Compound.Name entries these samples should be removed
+> #   as this is minimum required information from the wet-lab generating data
+> if(any(is.na(wambaugh2019.clint.L1$Lab.Compound.Name))){
++   # stash samples with a missing Lab.Compound.Name
++   samps_na.lab.comp.name <- dplyr::filter(wambaugh2019.clint.L1,is.na(Lab.Compound.Name))
++   save(samps_na.lab.comp.name,
++        file = here::here("data/Wambaugh2019_regen2025_Clint_LCNsampNA.RData"))
++   # update the L1 dataset
++   wambaugh2019.clint.L1 <- dplyr::filter(wambaugh2019.clint.L1,!is.na(Lab.Compound.Name))
++ }
+> # create an exclusion criteria dataframe
+> #   when doing the initial processing identified a compound with Blank samples and Response is Infinite
+> #   assume these samples should be "unverified" (i.e. held-out from the data)
+> EC_wambaugh2019.clint <- data.frame(
++   Variables = c("Lab.Compound.Name|Sample.Type|Test.Nominal.Conc",
++                 "Compound.Name"),
++   Values = c("BF00174486|Blank|10",
++              "E-Cinnamic acid"),
++   Message = c("Response Values for Blank samples are Inf",
++               "Compound has insufficient data, only Blank samples exist.")
++ )
+> tictoc::tic()
+> wambaugh2019.clint.L2 <- invitroTKstats::sample_verification(
++   data.in = wambaugh2019.clint.L1,
++   exclusion.info = EC_wambaugh2019.clint,
++   output.res = TRUE,
++   FILENAME = "Wambaugh2019_regen2025",
++   assay = "Clint",
++   OUTPUT.DIR = here::here("data")
++ )
+A level-2 file named Wambaugh2019_regen2025-Clint-Level2.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+> # manual verification since the `sample_verification` cannot handle the special
+> # character in the lab sample name that needs to have a verification exception 
+> wambaugh2019.clint.L2[which(is.na(wambaugh2019.clint.L2$Test.Nominal.Conc)),"Verified"] <-
++   "Missing Nominal or Compound Concentration value."
+> tictoc::toc()
+3.45 sec elapsed
+> ## Process L2 to L3 ##
+> tictoc::tic()
+> wambaugh2019.clint.L3 <- invitroTKstats::calc_clint_point(
++   data.in = wambaugh2019.clint.L2,
++   sig.figs = NULL,
++   output.res = TRUE,
++   FILENAME = "Wambaugh2019_regen2025",
++   OUTPUT.DIR = here::here("data")
++ )
+[1] "Umbelliferone Cl_int = 1.35089424969736 uL/min/million hepatocytes, p-Value = 0.773185603699968 ."
+[1] "Midazolam Cl_int = 0.702863292839259 uL/min/million hepatocytes, p-Value = 0.167795796824525 ."
+[1] "Verapamil Cl_int = 0.202418405740942 uL/min/million hepatocytes, p-Value = 2.9686484940872e-09 ."
+[1] "Bis(4-hydroxyphenyl)methane Cl_int = 0.353399630398784 uL/min/million hepatocytes, p-Value = 1.33775797871131e-47 ."
+[1] "FD&C Green No. 3 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bensulfuron-methyl Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Nitrophenol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Acifluorfen Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Phenol Red sodium salt Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3-Phenoxybenzoic acid Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Tris(2-chloroethyl) phosphate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Clotrimazole Cl_int = 0.0986256602533536 uL/min/million hepatocytes, p-Value = 9.48231305841226e-08 ."
+[1] "4-Chloroanulline Cl_int = 0.0735418647173333 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Isopropalin Cl_int = 0.233435605195451 uL/min/million hepatocytes, p-Value = 2.00849545181232e-33 ."
+[1] "Chlorhexidine diacetate Cl_int = 0.0426312891630922 uL/min/million hepatocytes, p-Value = 0.000475616485822464 ."
+[1] "Diflubenzuron Cl_int = 0.0792666212881179 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Chloramben Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Sulfluramid Cl_int = 0.0595700607594828 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Isophorone Cl_int = 0.249798941013417 uL/min/million hepatocytes, p-Value = 4.6030078896651e-25 ."
+[1] "1,2,3,4-Tetrachlorobenzene Cl_int = 0.498092116767965 uL/min/million hepatocytes, p-Value = 1.06224840152094e-32 ."
+[1] "Bifenthrin Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Chlorobenzilate Cl_int = 0.609519818953471 uL/min/million hepatocytes, p-Value = 1.81537894924678e-10 ."
+[1] "4,4'-Dibromodiphenyl ether Cl_int = 0.083999812469805 uL/min/million hepatocytes, p-Value = 0.383602177747197 ."
+[1] "1,3,5-Tribromobenzene Cl_int = 0.0862828269123246 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Pentachlorobenzene Cl_int = 0.306140320493931 uL/min/million hepatocytes, p-Value = 3.26084075336892e-22 ."
+[1] "Catechol Cl_int = 0.453684981616282 uL/min/million hepatocytes, p-Value = 3.60169184892609e-36 ."
+[1] "Apigenin Cl_int = 0.586936665632586 uL/min/million hepatocytes, p-Value = 5.46789379560404e-39 ."
+[1] "Dexamethasone sodium phosphate Cl_int = 0.211869005980921 uL/min/million hepatocytes, p-Value = 3.14558474794116e-22 ."
+[1] "FD&C Yellow 6 Cl_int = 0.108623933914558 uL/min/million hepatocytes, p-Value = 0.000476277400036507 ."
+[1] "Nitrofurazone Cl_int = 0.0547626625402011 uL/min/million hepatocytes, p-Value = 0.000150986619460633 ."
+[1] "Tributyltin chloride Cl_int = 0.0670679487298729 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Acibenzolar-S-methyl Cl_int = 21.9400885308329 uL/min/million hepatocytes, p-Value = 3.26936612253588e-53 ."
+[1] "Triglycidyl isocyanurate Cl_int = 1.68674695237674 uL/min/million hepatocytes, p-Value = 1.92607560372967e-65 ."
+[1] "FR900409 Cl_int = 0.422606799789289 uL/min/million hepatocytes, p-Value = 6.55575723612041e-05 ."
+[1] "Sodium saccharin hydrate Cl_int = 0.074708538738964 uL/min/million hepatocytes, p-Value = 0.00106960166699567 ."
+[1] "1-(Hydroxymethyl)-5,5-dimethylhydantoin Cl_int = 0.22537058326146 uL/min/million hepatocytes, p-Value = 1.1170916415592e-25 ."
+[1] "Isoproterenol hydrochloride Cl_int = 0.0737853009331534 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "6-Thioguanine Cl_int = 0.093432504479606 uL/min/million hepatocytes, p-Value = 0.00461661280205024 ."
+[1] "Famoxadone Cl_int = 0.185208038908902 uL/min/million hepatocytes, p-Value = 8.61296504367464e-15 ."
+[1] "Docusate sodium Cl_int = 0.397040559480322 uL/min/million hepatocytes, p-Value = 1.12061801767934e-33 ."
+[1] "Aspirin Cl_int = 0.157668715104497 uL/min/million hepatocytes, p-Value = 2.74199498006232e-10 ."
+[1] "Nitrofurantoin Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Pravastatin sodium Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Nilutamide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Fomesafen Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Hydrochlorothiazide Cl_int = 0.0442421499900603 uL/min/million hepatocytes, p-Value = 0.0282533292651363 ."
+[1] "Raloxifene hydrochloride Cl_int = 0.467859886624316 uL/min/million hepatocytes, p-Value = 9.36681888444463e-36 ."
+[1] "2-Amino-5-azotoluene Cl_int = 0.108933909678057 uL/min/million hepatocytes, p-Value = 4.39569251565049e-15 ."
+[1] "Methimazole Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "6-Methyl-2-thiouracil Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Nitrosodiphenylamine Cl_int = 15.1865565462837 uL/min/million hepatocytes, p-Value = 2.2445804012132e-06 ."
+[1] "Sulfaquinoxaline Cl_int = 0.00747082217610363 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "C.I. Solvent Yellow 14 Cl_int = 0.0628477359153407 uL/min/million hepatocytes, p-Value = 0.000243114070275587 ."
+[1] "Enterolactone Cl_int = 0.732946427422529 uL/min/million hepatocytes, p-Value = 9.62514713252803e-57 ."
+[1] "Oleyl sarcosine Cl_int = 0.516715969185755 uL/min/million hepatocytes, p-Value = 2.40480593972411e-39 ."
+[1] "Benzocaine Cl_int = 2.36349715567979 uL/min/million hepatocytes, p-Value = 2.73960039725499e-94 ."
+[1] "Auramine hydrochloride Cl_int = 0.138955317912553 uL/min/million hepatocytes, p-Value = 1.98941017219463e-17 ."
+[1] "Chlorophacinone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Propylanilline Cl_int = 0.249519389158488 uL/min/million hepatocytes, p-Value = 0.0339091725136263 ."
+[1] "Laurocapram Cl_int = 0.465043192756228 uL/min/million hepatocytes, p-Value = 1.6847471467862e-11 ."
+[1] "3,3'-Dimethylbenzidine dihydrochloride Cl_int = 0.165653685725276 uL/min/million hepatocytes, p-Value = 4.38925267713512e-25 ."
+[1] "Fluorescein Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Triphenylphosphine oxide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-Mercaptobenzimidazole Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Cyclophosphamide monohydrate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Monotridecyl phosphate Cl_int = 0.336773846626379 uL/min/million hepatocytes, p-Value = 3.45756770675103e-36 ."
+[1] "Resveratrol Cl_int = 0.44217070635116 uL/min/million hepatocytes, p-Value = 7.41228502948987e-29 ."
+[1] "Nootkatone Cl_int = 1.34232047187105 uL/min/million hepatocytes, p-Value = 5.28906436892936e-69 ."
+[1] "C.I. Basic Red 9 monohydrochloride Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "(-)-Epigallocatechin gallate Cl_int = 0.29010620707825 uL/min/million hepatocytes, p-Value = 8.98147183918761e-10 ."
+[1] "Sodium 2-mercaptobenzothiolate Cl_int = 0.443848987106755 uL/min/million hepatocytes, p-Value = 4.04609272132608e-55 ."
+[1] "2-Chloro-N-phenylacetamide Cl_int = 0.625212799298476 uL/min/million hepatocytes, p-Value = 5.10789778389837e-71 ."
+[1] "N-Phenyl-1-naphthylamine Cl_int = 0.15786925160962 uL/min/million hepatocytes, p-Value = 0.000656217856142019 ."
+[1] "Fenuron Cl_int = 0.0573584925814884 uL/min/million hepatocytes, p-Value = 1.257067395921e-17 ."
+[1] "Tributyltetradecylphosphonium chloride Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Methylene blue Cl_int = 0.119487736356837 uL/min/million hepatocytes, p-Value = 5.11205753551256e-36 ."
+[1] "4-Butylaniline Cl_int = 0.11678432173372 uL/min/million hepatocytes, p-Value = 1.99680234714088e-19 ."
+[1] "4-tert-Butylaniline Cl_int = 0.148819620700708 uL/min/million hepatocytes, p-Value = 5.03325289460345e-42 ."
+[1] "4-Butyloxyaniline Cl_int = 0.202444698515237 uL/min/million hepatocytes, p-Value = 1.13780167890793e-44 ."
+[1] "3,5-Dichloroaniline Cl_int = 0.52354195562771 uL/min/million hepatocytes, p-Value = 2.5701368295536e-55 ."
+[1] "4-Ethoxyaniline Cl_int = 0.222129167758359 uL/min/million hepatocytes, p-Value = 1.62539725628072e-46 ."
+[1] "Leucomalachite green Cl_int = 0.0790319576417596 uL/min/million hepatocytes, p-Value = 9.72914345732558e-18 ."
+[1] "Phenothiazine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Diphenyl phthalate Cl_int = 34.8978344570032 uL/min/million hepatocytes, p-Value = 1.25214309322854e-82 ."
+[1] "4-Methylbenzophenone Cl_int = 1.00210745705357 uL/min/million hepatocytes, p-Value = 1.94602636669898e-46 ."
+[1] "2-Ethyl-3-hydroxy-4H-pyran-4-one Cl_int = 0.648893575720734 uL/min/million hepatocytes, p-Value = 1.62417953013639e-75 ."
+[1] "Pebulate Cl_int = 0.835122857154938 uL/min/million hepatocytes, p-Value = 1.3752940030031e-27 ."
+[1] "Morin hydrate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3-Iodo-2-propynyl-N-butylcarbamate Cl_int = 33.8494045245874 uL/min/million hepatocytes, p-Value = 1.30890927237143e-52 ."
+[1] "Sulfamethazine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Anilinophenol Cl_int = 0.742100369388142 uL/min/million hepatocytes, p-Value = 7.92586378926983e-49 ."
+[1] "4-Aminobenzoic acid Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3-Chloro-4-methylaniline Cl_int = 0.370993694195858 uL/min/million hepatocytes, p-Value = 1.36189378379381e-26 ."
+[1] "Aniline hydrochloride Cl_int = 0.0716493165010755 uL/min/million hepatocytes, p-Value = 2.20731741919335e-17 ."
+[1] "Apomorphine hydrochloride hydrate Cl_int = 0.134541367363434 uL/min/million hepatocytes, p-Value = 7.2784709520006e-06 ."
+[1] "3,5,3'-Triiodothyronine Cl_int = 0.0548056172759559 uL/min/million hepatocytes, p-Value = 0.00135863446800647 ."
+[1] "Levothyroxine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3,3'-Dimethoxybenzidine dihydrochloride Cl_int = 0.0694271897195704 uL/min/million hepatocytes, p-Value = 2.13972898701527e-09 ."
+[1] "Minocycline hydrochloride Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Dodecyltrimethylammonium chloride Cl_int = 0.23389361208253 uL/min/million hepatocytes, p-Value = 1.66757759849259e-29 ."
+[1] "2,5-Bis(2-methylbutan-2-yl)benzene-1,4-diol Cl_int = 0.239434777475747 uL/min/million hepatocytes, p-Value = 4.96652110878884e-16 ."
+[1] "2-tert-Butyl-4-ethylphenol Cl_int = 1.45783770563466 uL/min/million hepatocytes, p-Value = 6.38942799216615e-48 ."
+[1] "2-Methoxy-4-propylphenol Cl_int = 0.759020228281041 uL/min/million hepatocytes, p-Value = 1.20633633525182e-19 ."
+[1] "1-Naphthol Cl_int = 0.0678626333093751 uL/min/million hepatocytes, p-Value = 1.78319523353193e-05 ."
+[1] "2-Methoxyphenol Cl_int = 0.736136856722521 uL/min/million hepatocytes, p-Value = 1.43125024172679e-25 ."
+[1] "2-tert-Butyl-4-methylphenol Cl_int = 0.675552277763774 uL/min/million hepatocytes, p-Value = 3.58854577374839e-38 ."
+[1] "Dihexyl phthalate Cl_int = 0.826555988056326 uL/min/million hepatocytes, p-Value = 1.18910046305025e-21 ."
+[1] "4-Chloro-2-methylaniline Cl_int = 0.144962606782578 uL/min/million hepatocytes, p-Value = 1.29419385934377e-22 ."
+[1] "Triacetin Cl_int = 5.37756222575915 uL/min/million hepatocytes, p-Value = 6.3646815604956e-70 ."
+[1] "Clofibrate Cl_int = 7.99323119690015 uL/min/million hepatocytes, p-Value = 2.63658518103284e-31 ."
+[1] "Rhodamine 6G Cl_int = 0.0783745034232139 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Amiodarone hydrochloride Cl_int = 0.107524590294125 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Folic acid Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Diclofenac sodium Cl_int = 0.512476420690556 uL/min/million hepatocytes, p-Value = 4.22279771451459e-49 ."
+[1] "Bispyribac-sodium Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Methotrexate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Hydramethylnon Cl_int = 0.0969440106622206 uL/min/million hepatocytes, p-Value = 0.00318905205403257 ."
+[1] "Chlorpromazine hydrochloride Cl_int = 0.0838405833795206 uL/min/million hepatocytes, p-Value = 0.0579528233464657 ."
+[1] "Mifepristone Cl_int = 0.113312358671032 uL/min/million hepatocytes, p-Value = 7.96945535663331e-22 ."
+[1] "Azathioprine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Pioglitazone hydrochloride Cl_int = 0.161210813654073 uL/min/million hepatocytes, p-Value = 8.76951798332783e-22 ."
+[1] "Cyclopamine Cl_int = 0.103004602972132 uL/min/million hepatocytes, p-Value = 3.27261362972967e-22 ."
+[1] "Disulfiram Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Thiobencarb Cl_int = 1.77407753281494 uL/min/million hepatocytes, p-Value = 2.25377967156652e-55 ."
+[1] "Nitrapyrin Cl_int = 0.449106392260654 uL/min/million hepatocytes, p-Value = 1.75417098303337e-36 ."
+[1] "3-tert-Butylphenol Cl_int = 0.255651431722031 uL/min/million hepatocytes, p-Value = 6.96730104990047e-18 ."
+[1] "3-Isopropylphenol Cl_int = 0.666316416501269 uL/min/million hepatocytes, p-Value = 1.04303427115406e-26 ."
+[1] "4-Butylphenol Cl_int = 0.504330154727828 uL/min/million hepatocytes, p-Value = 9.45068471518476e-22 ."
+[1] "4-(Hexyloxy)phenol Cl_int = 0.48734199647219 uL/min/million hepatocytes, p-Value = 3.74618685516563e-41 ."
+[1] "4-Methoxyphenol Cl_int = 0.447130625247957 uL/min/million hepatocytes, p-Value = 2.1176576686786e-20 ."
+[1] "Bisphenol E Cl_int = 0.367050302030927 uL/min/million hepatocytes, p-Value = 1.54857347544423e-36 ."
+[1] "Oxyphenisatin Cl_int = 0.0898416556398653 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Diazinon Cl_int = 0.25733760515852 uL/min/million hepatocytes, p-Value = 1.20391891679343e-05 ."
+[1] "Bromocresol green sodium salt Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3,3'-Dimethylbisphenol A Cl_int = 0.516339937830536 uL/min/million hepatocytes, p-Value = 1.24566288557767e-20 ."
+[1] "Chlorpyrifos-methyl Cl_int = 0.400265470480831 uL/min/million hepatocytes, p-Value = 1.23047557710726e-29 ."
+[1] "o,p'-DDT Cl_int = 0.279097967061241 uL/min/million hepatocytes, p-Value = 6.88708040712065e-15 ."
+[1] "2-Hydroxy-4-methoxybenzophenone Cl_int = 0.592942568220008 uL/min/million hepatocytes, p-Value = 3.68949920547736e-33 ."
+[1] "Heptachlor epoxide Cl_int = 0.0195414533356124 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "beta-Hexachlorocyclohexane Cl_int = 0.0369027321487712 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Dichlorvos Cl_int = 0.471653396218107 uL/min/million hepatocytes, p-Value = 5.95730667622145e-11 ."
+[1] "Lindane Cl_int = 0.0976023765633193 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Diphenolic acid Cl_int = 0.05008437084596 uL/min/million hepatocytes, p-Value = 6.89439962797057e-09 ."
+[1] "4,4'-Sulfonyldiphenol Cl_int = 0.0823717857731825 uL/min/million hepatocytes, p-Value = 1.48703206156494e-15 ."
+[1] "2,2',6,6'-Tetrachlorobisphenol A Cl_int = 0.458303341208846 uL/min/million hepatocytes, p-Value = 5.13765351619308e-34 ."
+[1] "Sulisobenzone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bisphenol F Cl_int = 0.78240962293728 uL/min/million hepatocytes, p-Value = 1.70459124680916e-46 ."
+[1] "Fenofibrate Cl_int = 9.41406082335444 uL/min/million hepatocytes, p-Value = 7.59075980881215e-61 ."
+[1] "Tamoxifen Cl_int = 0.0463536199508111 uL/min/million hepatocytes, p-Value = 0.650406271707628 ."
+[1] "2,4-Dihydroxybenzophenone Cl_int = 0.608131791291029 uL/min/million hepatocytes, p-Value = 6.35808739402202e-32 ."
+[1] "Tetrabromophenolphthalein ethyl ester Cl_int = 0.0414310685486241 uL/min/million hepatocytes, p-Value = 5.32919779080938e-05 ."
+[1] "Tolcapone Cl_int = 0.184073930622926 uL/min/million hepatocytes, p-Value = 1.92244310293474e-40 ."
+[1] "3,3',5,5'-Tetrabromobisphenol A Cl_int = 0.322538949811527 uL/min/million hepatocytes, p-Value = 0.000221547824334079 ."
+[1] "Monomethyl phthalate Cl_int = 0.104763266681459 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4,4'-(9H-Fluorene-9,9-diyl)diphenol Cl_int = 0.51012508665693 uL/min/million hepatocytes, p-Value = 1.06564965585793e-55 ."
+[1] "2,4-Bis(1-methyl-1-phenylethyl)phenol Cl_int = 0.794222375680612 uL/min/million hepatocytes, p-Value = 6.70736433603549e-18 ."
+[1] "Bromophenol blue Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,2'-Methylenebis(4-methyl-6-tert-butylphenol) Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Norgestrel Cl_int = 0.273025400081286 uL/min/million hepatocytes, p-Value = 1.93270074257002e-20 ."
+[1] "Coumaphos Cl_int = 0.208891629410206 uL/min/million hepatocytes, p-Value = 0.31033555819686 ."
+[1] "Pirimiphos-methyl Cl_int = 0.73345950984529 uL/min/million hepatocytes, p-Value = 2.336840669582e-08 ."
+[1] "2-[4-(Diethylamino)-2-hydroxybenzoyl]benzoic acid Cl_int = 0.0246593430119635 uL/min/million hepatocytes, p-Value = 9.52024671750667e-15 ."
+[1] "2,4,4'-Trihydroxybenzophenone Cl_int = 0.330319050575975 uL/min/million hepatocytes, p-Value = 4.34607542514494e-31 ."
+[1] "Phenolphthalin Cl_int = 0.0516148074503507 uL/min/million hepatocytes, p-Value = 3.51270485872679e-22 ."
+[1] "Phenol red Cl_int = 0.0535239573295664 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-(4-Hydroxybenzyl)phenol Cl_int = 0.808592467087652 uL/min/million hepatocytes, p-Value = 7.60880576674553e-09 ."
+[1] "meso-Hexestrol Cl_int = 0.216788808077605 uL/min/million hepatocytes, p-Value = 0.402659342242283 ."
+[1] "MEHP Cl_int = 0.108752138677577 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Exifone Cl_int = 28.7333396293477 uL/min/million hepatocytes, p-Value = 2.85369740635483e-46 ."
+[1] "2,3,4-Trihydroxbenzophenone Cl_int = 0.770167701711484 uL/min/million hepatocytes, p-Value = 2.47362015657801e-68 ."
+[1] "p-Xylenol blue Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4,4'-(Isopropylidenebis(4,1-phenyleneoxy))dianiline Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Dichlorophen Cl_int = 0.792790346343984 uL/min/million hepatocytes, p-Value = 9.67815237872139e-06 ."
+[1] "Diisobutyl phthalate Cl_int = 5.52828072481932 uL/min/million hepatocytes, p-Value = 1.3193098386246e-10 ."
+[1] "Benzyl butyl phthalate Cl_int = 7.97297998082743 uL/min/million hepatocytes, p-Value = 1.18759456594718e-11 ."
+[1] "Chlorotrianisene Cl_int = 0.18111650227756 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3-Dimethylaminophenol Cl_int = 0.340767831742572 uL/min/million hepatocytes, p-Value = 0.02670024486056 ."
+[1] "2,2'-Methylenebis(ethyl-6-tert-butylphenol) Cl_int = 0.0792402944498914 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Equilin Cl_int = 0.196312327251079 uL/min/million hepatocytes, p-Value = 2.83416099180511e-10 ."
+[1] "Terbufos Cl_int = 0.34670800060087 uL/min/million hepatocytes, p-Value = 1.47869207473976e-05 ."
+[1] "Triclosan Cl_int = 0.371107061127173 uL/min/million hepatocytes, p-Value = 3.08861847031328e-11 ."
+[1] "1,2,3,4,5,6-Hexachlorocyclohexane Cl_int = 0.247046509156885 uL/min/million hepatocytes, p-Value = 0.00323180542012705 ."
+[1] "Fenpropathrin Cl_int = 0.434779253258997 uL/min/million hepatocytes, p-Value = 7.64750189577673e-10 ."
+[1] "Esfenvalerate Cl_int = 0.180661251822702 uL/min/million hepatocytes, p-Value = 0.000641014900615717 ."
+[1] "Methoxychlor Cl_int = 0.278566448556595 uL/min/million hepatocytes, p-Value = 3.90673691667312e-10 ."
+[1] "Bisphenol A Cl_int = 0.268721404946192 uL/min/million hepatocytes, p-Value = 1.78546545554913e-19 ."
+[1] "Chlorothalonil Cl_int = 0.128851646736226 uL/min/million hepatocytes, p-Value = 0.328764752536987 ."
+[1] "1,3-Dinitrobenzene Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Octrizole Cl_int = 0.10760581245828 uL/min/million hepatocytes, p-Value = 7.62939371289377e-11 ."
+[1] "5-Heptyldihydro-2(3H)-furanone Cl_int = 0.165934178781135 uL/min/million hepatocytes, p-Value = 1.18819808056426e-20 ."
+[1] "4-Heptylphenol Cl_int = 0.916991124879471 uL/min/million hepatocytes, p-Value = 1.30849338306805e-28 ."
+[1] "p,p'-DDT Cl_int = 0.2588977792421 uL/min/million hepatocytes, p-Value = 1.77998437558753e-14 ."
+[1] "17alpha-Ethinylestradiol Cl_int = 0.224967388726191 uL/min/million hepatocytes, p-Value = 2.79309389991084e-06 ."
+[1] "4-Cumylphenol Cl_int = 0.443000483830455 uL/min/million hepatocytes, p-Value = 4.6689393120467e-19 ."
+[1] "2-(Thiocyanomethylthio)benzothiazole Cl_int = 0.0928849877254589 uL/min/million hepatocytes, p-Value = 0.670782391326692 ."
+[1] "4-Hydroxytamoxifen Cl_int = 0.296464141351093 uL/min/million hepatocytes, p-Value = 9.98815455683115e-32 ."
+[1] "17beta-Trenbolone Cl_int = 0.456931770354634 uL/min/million hepatocytes, p-Value = 1.04768050032241e-46 ."
+[1] "5alpha-Dihydrotestosterone Cl_int = 0.580771904286242 uL/min/million hepatocytes, p-Value = 7.09608146836504e-37 ."
+[1] "Profenofos Cl_int = 0.41447749612492 uL/min/million hepatocytes, p-Value = 1.16390055921814e-27 ."
+[1] "Trichlorfon Cl_int = 0.782622296360115 uL/min/million hepatocytes, p-Value = 2.46919170856551e-50 ."
+[1] "5HPP-33 Cl_int = 0.423957666137606 uL/min/million hepatocytes, p-Value = 7.93157387173814e-08 ."
+[1] "Fenoxaprop-P-ethyl Cl_int = 8.9802112207687 uL/min/million hepatocytes, p-Value = 9.42393184672283e-28 ."
+[1] "Basic Blue 7 Cl_int = 0.0597279095530963 uL/min/million hepatocytes, p-Value = 8.02503586085632e-15 ."
+[1] "Trinexapac-ethyl Cl_int = 0.0838738858905358 uL/min/million hepatocytes, p-Value = 8.33695996937012e-39 ."
+[1] "Clodinafop-propargyl Cl_int = 16.2747243546903 uL/min/million hepatocytes, p-Value = 5.51542510395276e-18 ."
+[1] "Dipropyl pyridine-2,5-dicarboxylate Cl_int = 24.4516544627429 uL/min/million hepatocytes, p-Value = 4.92443441816365e-81 ."
+[1] "Azamethiphos Cl_int = 7.19138458624469 uL/min/million hepatocytes, p-Value = 2.41913967798413e-44 ."
+[1] "4,4'-Methylenedianiline Cl_int = 0.0624607700822033 uL/min/million hepatocytes, p-Value = 8.40272279734658e-09 ."
+[1] "Daminozide Cl_int = 0.0348645904654839 uL/min/million hepatocytes, p-Value = 3.21758270854278e-08 ."
+[1] "Difenoconazole Cl_int = 0.135367403333083 uL/min/million hepatocytes, p-Value = 9.5075558783026e-09 ."
+[1] "Propiconazole Cl_int = 0.0745795023522296 uL/min/million hepatocytes, p-Value = 2.69705786458731e-10 ."
+[1] "Fluazifop-butyl Cl_int = 25.3849307820005 uL/min/million hepatocytes, p-Value = 1.27706545098872e-110 ."
+[1] "Chlorpyrifos oxon Cl_int = 0.471590074746785 uL/min/million hepatocytes, p-Value = 1.14900319844919e-43 ."
+[1] "Thiram Cl_int = 5.51802504754534 uL/min/million hepatocytes, p-Value = 4.46004554193339e-48 ."
+[1] "Triflumizole Cl_int = 0.228415354852419 uL/min/million hepatocytes, p-Value = 7.09332135246578e-26 ."
+[1] "Methomyl Cl_int = 0.0550424211211511 uL/min/million hepatocytes, p-Value = 6.87760013771797e-14 ."
+[1] "Mevinphos Cl_int = 0.0881509615286396 uL/min/million hepatocytes, p-Value = 9.4008428553639e-18 ."
+[1] "Trifloxystrobin Cl_int = 2.80180051368504 uL/min/million hepatocytes, p-Value = 1.60070717827401e-11 ."
+[1] "Carfentrazone-ethyl Cl_int = 24.2662764226608 uL/min/million hepatocytes, p-Value = 8.82984511819084e-53 ."
+[1] "Thiodicarb Cl_int = 21.6159719607152 uL/min/million hepatocytes, p-Value = 2.68933661315631e-37 ."
+[1] "Isoxaben Cl_int = 0.14637539287226 uL/min/million hepatocytes, p-Value = 2.59846586474835e-18 ."
+[1] "Fenbuconazole Cl_int = 0.0651820853845852 uL/min/million hepatocytes, p-Value = 6.29740179279751e-06 ."
+[1] "Asulam Cl_int = 0.0417060244363145 uL/min/million hepatocytes, p-Value = 2.92480906169987e-13 ."
+[1] "Warfarin Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Flumiclorac-pentyl Cl_int = 6.53362225732849 uL/min/million hepatocytes, p-Value = 1.71902876675491e-63 ."
+[1] "Pyrithiobac-sodium Cl_int = 0.0279916505021886 uL/min/million hepatocytes, p-Value = 1.39311018730274e-10 ."
+[1] "Diquat dibromide monohydrate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Flufenpyr-ethyl Cl_int = 9.30641006905086 uL/min/million hepatocytes, p-Value = 1.64289959218908e-78 ."
+[1] "17alpha-Estradiol Cl_int = 0.40498816093708 uL/min/million hepatocytes, p-Value = 3.8827066130775e-34 ."
+[1] "SB236057A Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Tamoxifen citrate Cl_int = 0.0902607398426522 uL/min/million hepatocytes, p-Value = 2.51831792647077e-17 ."
+[1] "C8-18-Alkydimethylbenzyl ammonium chlorides Cl_int = 0.169632720177781 uL/min/million hepatocytes, p-Value = 1.01711085043449e-22 ."
+[1] "Spirodiclofen Cl_int = 0.523025121371135 uL/min/million hepatocytes, p-Value = 5.81721694282496e-40 ."
+[1] "Monocrotophos Cl_int = 0.0123284111324034 uL/min/million hepatocytes, p-Value = 8.88283520019365e-07 ."
+[1] "Fenpyroximate (Z,E) Cl_int = 0.140403590928449 uL/min/million hepatocytes, p-Value = 6.58266646357621e-07 ."
+[1] "Fulvestrant Cl_int = 0.0652171480896697 uL/min/million hepatocytes, p-Value = 2.20029359194475e-31 ."
+[1] "Denatonium saccharide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Cyfluthrin Cl_int = 0.241135197696925 uL/min/million hepatocytes, p-Value = 3.22551388036329e-22 ."
+[1] "Propoxycarbazone-sodium Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Malaoxon Cl_int = 0.322797419778095 uL/min/million hepatocytes, p-Value = 6.06714229476219e-42 ."
+[1] "Nicotine Cl_int = 0.0835305533351631 uL/min/million hepatocytes, p-Value = 1.45450238299487e-07 ."
+[1] "N,N,N-Trimethyl(oxiran-2-yl)methanaminium chloride Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "S-Bioallethrin Cl_int = 0.287233750224791 uL/min/million hepatocytes, p-Value = 2.00579810882653e-28 ."
+[1] "Fluthiacet-methyl Cl_int = 24.6656483447054 uL/min/million hepatocytes, p-Value = 1.47488568959261e-71 ."
+[1] "Darbufelone mesylate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "CJ-013610 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "SSR241586 Cl_int = 0.0241531238848014 uL/min/million hepatocytes, p-Value = 0.129206665250377 ."
+[1] "Quercetin Cl_int = 0.695618721676931 uL/min/million hepatocytes, p-Value = 7.11302653235909e-47 ."
+[1] "Testosterone propionate Cl_int = 6.06197615586431 uL/min/million hepatocytes, p-Value = 1.79695639935733e-29 ."
+[1] "17beta-Estradiol Cl_int = 0.369819956672781 uL/min/million hepatocytes, p-Value = 1.26893381374127e-40 ."
+[1] "Daidzein Cl_int = 0.290168343326372 uL/min/million hepatocytes, p-Value = 8.64630116044674e-34 ."
+[1] "Norethindrone Cl_int = 0.0844760175893394 uL/min/million hepatocytes, p-Value = 0.35212072531455 ."
+[1] "Cyazofamid Cl_int = 0.185317167582885 uL/min/million hepatocytes, p-Value = 3.74405378052038e-09 ."
+[1] "2,5-Di-tert-butylbenzene-1,4-diol Cl_int = 0.370513163469156 uL/min/million hepatocytes, p-Value = 1.11240274525565e-18 ."
+[1] "Methamidophos Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Endothal Cl_int = 0.0269640456042241 uL/min/million hepatocytes, p-Value = 0.0230948938593264 ."
+[1] "Picloram Cl_int = 0.0225466202647265 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bisphenol AF Cl_int = 0.465300738683805 uL/min/million hepatocytes, p-Value = 1.55238525788954e-28 ."
+[1] "4,4',4''-Ethane-1,1,1-triyltriphenol Cl_int = 0.190731278077041 uL/min/million hepatocytes, p-Value = 1.80557722271787e-22 ."
+[1] "Diethylstilbestrol Cl_int = 0.208086681714714 uL/min/million hepatocytes, p-Value = 5.87957270018617e-35 ."
+[1] "Hexachlorocyclopentadiene Cl_int = 0.0141676182994317 uL/min/million hepatocytes, p-Value = 0.145509569399729 ."
+[1] "Estrone Cl_int = 0.0493414213728176 uL/min/million hepatocytes, p-Value = 1.87790434108305e-06 ."
+[1] "17-Methyltestosterone Cl_int = 0.175994764794713 uL/min/million hepatocytes, p-Value = 1.06276943618626e-17 ."
+[1] "Butyl benzyl phthalate Cl_int = 5.30555323749999 uL/min/million hepatocytes, p-Value = 2.28522054826151e-66 ."
+[1] "Maleic hydrazide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Clopyralid Cl_int = 0.0612479561948938 uL/min/million hepatocytes, p-Value = 3.43472048314277e-07 ."
+[1] "Tralkoxydim Cl_int = 0.0452943464543544 uL/min/million hepatocytes, p-Value = 5.72866441235879e-06 ."
+[1] "Clopyralid-olamine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-Chloro-4-phenylphenol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,2',4,4'-Tetrahydroxybenzophenone Cl_int = 0.290263275629414 uL/min/million hepatocytes, p-Value = 0.000262845633208158 ."
+[1] "Permethrin Cl_int = 0.194317972543858 uL/min/million hepatocytes, p-Value = 6.87287503386273e-06 ."
+[1] "Pyraflufen-ethyl Cl_int = 0.462809871040268 uL/min/million hepatocytes, p-Value = 0.00277650951145279 ."
+[1] "Propargite Cl_int = 0.495708234647773 uL/min/million hepatocytes, p-Value = 1.77548588368703e-30 ."
+[1] "Trifluralin Cl_int = 1.03609362247344 uL/min/million hepatocytes, p-Value = 1.0737988244074e-13 ."
+[1] "1-Chloro-4-nitrobenzene Cl_int = 0.270631678328679 uL/min/million hepatocytes, p-Value = 0.34669857299166 ."
+[1] "Pentachloropyridine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Butyl benzoate Cl_int = 5.78607778329741 uL/min/million hepatocytes, p-Value = 8.34975560457511e-40 ."
+[1] "Acetophenone Cl_int = 0.176652924529845 uL/min/million hepatocytes, p-Value = 2.38222233524155e-16 ."
+[1] "1,2-Dimethyl-4-nitrobenzene Cl_int = 0.594694903368654 uL/min/million hepatocytes, p-Value = 3.11557778904133e-20 ."
+[1] "Dibutyl decanedioate Cl_int = 3.16282760497662 uL/min/million hepatocytes, p-Value = 7.53327238865717e-37 ."
+[1] "7-Hydroxy-4-trifluoromethylcoumarin Cl_int = 2.50134935679625 uL/min/million hepatocytes, p-Value = 1.68130029429782e-14 ."
+[1] "Melengestrol acetate Cl_int = 0.215464906937466 uL/min/million hepatocytes, p-Value = 1.22798938474139e-12 ."
+[1] "Hydroxyprogesterone caproate Cl_int = 0.712912015613659 uL/min/million hepatocytes, p-Value = 1.28300547207963e-32 ."
+[1] "Theobromine Cl_int = 0.121053395438341 uL/min/million hepatocytes, p-Value = 0.0621673384759282 ."
+[1] "2-Aminoanthraquinone Cl_int = 0.231713070248423 uL/min/million hepatocytes, p-Value = 1.31091510798352e-33 ."
+[1] "Piragliatin Cl_int = 0.109539523475133 uL/min/million hepatocytes, p-Value = 2.13942737518355e-31 ."
+[1] "4-Hydroxy-3-methoxybenzaldehyde Cl_int = 2.52912768431803 uL/min/million hepatocytes, p-Value = 1.01235994615816e-73 ."
+[1] "Pyridoxine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Acetyl tributyl citrate Cl_int = 4.15094463890496 uL/min/million hepatocytes, p-Value = 2.6663604403682e-84 ."
+[1] "Eosin Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Carabersat Cl_int = 0.0395610120049608 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Fenoxaprop-(2S)-ethyl Cl_int = 34.6727910429193 uL/min/million hepatocytes, p-Value = 4.13894135380319e-77 ."
+[1] "1,2,3-Benzotriazole Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Sodium dehydroacetate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Chloro-1,2-diaminobenzene Cl_int = 0.190162345397799 uL/min/million hepatocytes, p-Value = 1.39599350282608e-31 ."
+[1] "Corticosterone Cl_int = 0.113764336031402 uL/min/million hepatocytes, p-Value = 4.83106886861422e-34 ."
+[1] "1-Dodecyl-2-pyrrolidinone Cl_int = 0.632802320844578 uL/min/million hepatocytes, p-Value = 6.72027254683346e-07 ."
+[1] "4-Pentylanulline Cl_int = 0.166471254862095 uL/min/million hepatocytes, p-Value = 3.33141454392302e-17 ."
+[1] "Methyl 2-aminobenzoate Cl_int = 4.05128223009249 uL/min/million hepatocytes, p-Value = 1.25379631972957e-242 ."
+[1] "Indomethacin Cl_int = 0.131654406027048 uL/min/million hepatocytes, p-Value = 8.43161188547643e-53 ."
+[1] "Econazole nitrate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Trelanserin Cl_int = 0.131641212284646 uL/min/million hepatocytes, p-Value = 4.29281547708301e-29 ."
+[1] "Caprolactam Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Triethylene glycol diacetate Cl_int = 4.75023580424603 uL/min/million hepatocytes, p-Value = 1.53515837919647e-91 ."
+[1] "Diisobutyl adipate Cl_int = 33.3701928754799 uL/min/million hepatocytes, p-Value = 1.45864359504646e-71 ."
+[1] "Dipentyl phthalate Cl_int = 3.56215226710707 uL/min/million hepatocytes, p-Value = 7.8622687698338e-57 ."
+[1] "Cytarabine hydrochloride Cl_int = 0.176836229432284 uL/min/million hepatocytes, p-Value = 2.79767991705687e-19 ."
+[1] "Allura Red C.I.16035 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bromocriptine mesylate Cl_int = 1.15867074917732 uL/min/million hepatocytes, p-Value = 1.717341187697e-60 ."
+[1] "Diethylene glycol dibenzoate Cl_int = 29.7025733125734 uL/min/million hepatocytes, p-Value = 3.40204019933209e-66 ."
+[1] "Cariporide mesylate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "1-Benzylquinolinium chloride Cl_int = 0.174856909018335 uL/min/million hepatocytes, p-Value = 2.78954691261082e-21 ."
+[1] "6-Methylquinoline Cl_int = 0.669998870352741 uL/min/million hepatocytes, p-Value = 3.18657863347288e-47 ."
+[1] "N-Ethylaniline Cl_int = 0.411341662397794 uL/min/million hepatocytes, p-Value = 6.07290235322648e-66 ."
+[1] "Ilepatril Cl_int = 0.10429940355448 uL/min/million hepatocytes, p-Value = 1.12615078136957e-20 ."
+[1] "Enadoline Cl_int = 0.0224723157119097 uL/min/million hepatocytes, p-Value = 7.80276459271491e-06 ."
+[1] "Besonprodil Cl_int = 0.0946938102062314 uL/min/million hepatocytes, p-Value = 1.37285429146218e-15 ."
+[1] "Elzasonan Cl_int = 0.405355155241326 uL/min/million hepatocytes, p-Value = 1.61298768476935e-36 ."
+[1] "dl-Norgestrel Cl_int = 0.0618674295102572 uL/min/million hepatocytes, p-Value = 0.000116305563632422 ."
+[1] "Surinabant Cl_int = 0.0768187263644026 uL/min/million hepatocytes, p-Value = 0.000291104839275587 ."
+[1] "Ingliforib Cl_int = 0.0485229847265985 uL/min/million hepatocytes, p-Value = 7.62948389359535e-06 ."
+[1] "2,6,10-Trimethyl-2,6,10-triazaundecane Cl_int = 0.0159966132549949 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Chrysin Cl_int = 0.833995927469773 uL/min/million hepatocytes, p-Value = 1.02395429411216e-44 ."
+[1] "Procymidone Cl_int = 0.122235252537752 uL/min/million hepatocytes, p-Value = 4.67644407868527e-24 ."
+[1] "Cyproterone acetate Cl_int = 0.0648607675996697 uL/min/million hepatocytes, p-Value = 4.22859006185841e-12 ."
+[1] "5-Amino-2-methylphenol Cl_int = 0.282632296807659 uL/min/million hepatocytes, p-Value = 1.62070079762079e-08 ."
+[1] "Biochanin A Cl_int = 0.527788948197498 uL/min/million hepatocytes, p-Value = 9.83145771836935e-47 ."
+[1] "4,4'-Bipyridine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Methenamine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Nelivaptan Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "N-Vinyl-2-pyrrolidone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Dimethoxane Cl_int = 8.97040729928571 uL/min/million hepatocytes, p-Value = 2.25214054405812e-22 ."
+[1] "4-Vinyl-1-cyclohexene dioxide Cl_int = 6.23260112202351 uL/min/million hepatocytes, p-Value = 3.01002216185861e-37 ."
+[1] "Methyl octanoate Cl_int = 0.209006035610665 uL/min/million hepatocytes, p-Value = 0.653390767708898 ."
+[1] "Geranyl acetate Cl_int = 8.19665690786788 uL/min/million hepatocytes, p-Value = 1.71991875009623e-31 ."
+[1] "1-Methylnaphthalene Cl_int = 4.60974217242252 uL/min/million hepatocytes, p-Value = 8.18705525540437e-44 ."
+[1] "Benzyl salicylate Cl_int = 6.22280959810229 uL/min/million hepatocytes, p-Value = 1.51092879544989e-35 ."
+[1] "1,2-Dimethyl-3-nitrobenzene Cl_int = 1.47911203110224 uL/min/million hepatocytes, p-Value = 5.15111887412997e-31 ."
+[1] "2,2,4-Trimethyl-1,3-pentanediol diisobutyrate Cl_int = 7.63732258042712 uL/min/million hepatocytes, p-Value = 1.25635989496656e-42 ."
+[1] "3-Pyridinecarbonitrile Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,4,6-Tris(tert-butyl)phenol Cl_int = 0.37195475193198 uL/min/million hepatocytes, p-Value = 3.63481711447275e-22 ."
+[1] "CP-634384 Cl_int = 0.0850713608843246 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Octyl gallate Cl_int = 2.82373572379257 uL/min/million hepatocytes, p-Value = 2.28401142512165e-09 ."
+[1] "Propyl gallate Cl_int = 0.728528234475621 uL/min/million hepatocytes, p-Value = 3.00718084029589e-66 ."
+[1] "Tetracycline Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Adriamycin hydrochloride Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Tolazamide Cl_int = 0.019842444408368 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Hexylanilline Cl_int = 2.08431236444724 uL/min/million hepatocytes, p-Value = 1.69579067879581e-09 ."
+[1] "C.I. Disperse Orange 37 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Lauryl gallate Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Hexyloxyanilline Cl_int = 0.318298627347492 uL/min/million hepatocytes, p-Value = 1.80567246549486e-10 ."
+[1] "Tetrabutyl ethylidenebisphenol Cl_int = 0.165266416071172 uL/min/million hepatocytes, p-Value = 1.16207702284407e-13 ."
+[1] "1,4-Dichlorobenzene Cl_int = 2.11169151649471 uL/min/million hepatocytes, p-Value = 1.09507150920454e-24 ."
+[1] "Disulfoton Cl_int = 3.3650067188167 uL/min/million hepatocytes, p-Value = 7.09655241048769e-48 ."
+[1] "Chlorethoxyfos Cl_int = 2.25831658739343 uL/min/million hepatocytes, p-Value = 1.05391171736519e-09 ."
+[1] "Pentachloronitrobenzene Cl_int = 3.97854124157576 uL/min/million hepatocytes, p-Value = 2.62329649435985e-15 ."
+[1] "1,3-Dichlorobenzene Cl_int = 2.32071450739961 uL/min/million hepatocytes, p-Value = 4.69062901459877e-30 ."
+[1] "Decamethylcyclopentasiloxane Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Chlorpropham Cl_int = 0.212331351426425 uL/min/million hepatocytes, p-Value = 3.60374136455921e-18 ."
+[1] "Dicofol Cl_int = 0.3720243032587 uL/min/million hepatocytes, p-Value = 9.95710642626821e-07 ."
+[1] "Secbumeton Cl_int = 0.0626151308803525 uL/min/million hepatocytes, p-Value = 0.00587452528447098 ."
+[1] "N,N-Dimethyldodecan-1-amine Cl_int = 0.609037787569978 uL/min/million hepatocytes, p-Value = 4.05599324707784e-26 ."
+[1] "Dipropyl 2,5-pyridinedicarboxylate Cl_int = 21.6912465031484 uL/min/million hepatocytes, p-Value = 2.99656548253237e-40 ."
+[1] "Triazophos Cl_int = 0.048265705992778 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Metamitron Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Ipconazole Cl_int = 0.483406051518359 uL/min/million hepatocytes, p-Value = 1.22679575756088e-27 ."
+[1] "Hydroxyflutamide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Methyl red Cl_int = 0.158193921235562 uL/min/million hepatocytes, p-Value = 1.00329151762307e-14 ."
+[1] "N-Benzyladenine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Monolinuron Cl_int = 0.0388655596150713 uL/min/million hepatocytes, p-Value = 0.00151711486373207 ."
+[1] "1,4-Bis(N-isopropylamino)anthraquinone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Diphenamid Cl_int = 0.124378402474445 uL/min/million hepatocytes, p-Value = 9.84981229326113e-07 ."
+[1] "Deethylatrazine Cl_int = 0.0353200097937162 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Isofenphos Cl_int = 0.702154911577316 uL/min/million hepatocytes, p-Value = 1.28864025333015e-39 ."
+[1] "Melatonin Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Picoxystrobin Cl_int = 0.162701197403752 uL/min/million hepatocytes, p-Value = 1.30718971379478e-19 ."
+[1] "Isoproturon Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Methyl 2,4-dihydroxy-3,6-dimethylbenzoate Cl_int = 1.27086657789446 uL/min/million hepatocytes, p-Value = 2.12170727234086e-70 ."
+[1] "4-(4-Hydroxyphenyl)butan-2-one Cl_int = 0.457809777003544 uL/min/million hepatocytes, p-Value = 2.17828980204188e-64 ."
+[1] "Triethylene glycol dimethyl ether Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Phenobarbital sodium Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bicalutamide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-Mercaptobenzothiazole Cl_int = 0.332310865269772 uL/min/million hepatocytes, p-Value = 1.14119368811633e-09 ."
+[1] "CP-671305 Cl_int = 0.0843888124230891 uL/min/million hepatocytes, p-Value = 0.0107593419374769 ."
+[1] "Tris(2,3-dibromopropyl) phosphate Cl_int = 0.662413232509828 uL/min/million hepatocytes, p-Value = 1.74741890651573e-34 ."
+[1] "Dipropyl phthalate Cl_int = 28.6038076263117 uL/min/million hepatocytes, p-Value = 2.66340534352099e-52 ."
+[1] "2,4,6-Tris(allyloxy)-1,3,5-triazine Cl_int = 0.101770735027454 uL/min/million hepatocytes, p-Value = 5.17709570497532e-18 ."
+[1] "4,4'-Methylenebis(2,6-diethylaniline) Cl_int = 0.13970526430024 uL/min/million hepatocytes, p-Value = 2.36010541876333e-07 ."
+[1] "Triamterene Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Loratadine Cl_int = 0.44188653655007 uL/min/million hepatocytes, p-Value = 7.4723737879677e-32 ."
+[1] "Sulfathiazole Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Tetrahydrocurcumin Cl_int = 1.01953649271322 uL/min/million hepatocytes, p-Value = 1.94675889513685e-31 ."
+[1] "(6)-Gingerol Cl_int = 0.81668569686778 uL/min/million hepatocytes, p-Value = 3.38476941642204e-09 ."
+[1] "Fabesetron hydrochloride Cl_int = 0.0497649944074424 uL/min/million hepatocytes, p-Value = 4.00822317207869e-10 ."
+[1] "Phenylparaben Cl_int = 30.802206350161 uL/min/million hepatocytes, p-Value = 2.7667108679155e-108 ."
+[1] "Sodium 4-nitrophenolate Cl_int = 0.298105296882577 uL/min/million hepatocytes, p-Value = 3.09953706992447e-48 ."
+[1] "all-trans-Retinoic acid Cl_int = 0.187981881941809 uL/min/million hepatocytes, p-Value = 2.15034838497174e-27 ."
+[1] "Epoxiconazole Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,3,6-Trimethylphenol Cl_int = 0.939534697187189 uL/min/million hepatocytes, p-Value = 1.45649406145627e-57 ."
+[1] "2,4,6-Trimethylphenol Cl_int = 0.98815631085432 uL/min/million hepatocytes, p-Value = 1.18428496633655e-53 ."
+[1] "3,4-Dichloronitrobenzene Cl_int = 0.195947315738289 uL/min/million hepatocytes, p-Value = 0.00394327866615972 ."
+[1] "2-tert-Butyl-5-methylphenol Cl_int = 1.00976089480324 uL/min/million hepatocytes, p-Value = 1.44140567200893e-13 ."
+[1] "2-tert-Butylphenol Cl_int = 0.985830936300996 uL/min/million hepatocytes, p-Value = 1.97146844947672e-41 ."
+[1] "4-Chloro-3-methylphenol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,4-Di-tert-butylphenol Cl_int = 0.466310959666724 uL/min/million hepatocytes, p-Value = 4.47831642593731e-24 ."
+[1] "Methyl salicylate Cl_int = 5.49185577173915 uL/min/million hepatocytes, p-Value = 1.67498982443666e-26 ."
+[1] "2,5-Dimethylphenol Cl_int = 0.648611043109159 uL/min/million hepatocytes, p-Value = 8.72899296873119e-23 ."
+[1] "Benzothiazole Cl_int = 0.229387203965794 uL/min/million hepatocytes, p-Value = 1.40593231318557e-20 ."
+[1] "3,4-Diaminotoluene Cl_int = 0.136739661473509 uL/min/million hepatocytes, p-Value = 1.93686358018203e-11 ."
+[1] "2-Methyl-5-nitroaniline Cl_int = 0.451165125669139 uL/min/million hepatocytes, p-Value = 2.19409412924349e-09 ."
+[1] "2,3-Dimethylphenol Cl_int = 0.749906471533607 uL/min/million hepatocytes, p-Value = 1.59403494888632e-44 ."
+[1] "NA Cl_int = 0.350836518640181 uL/min/million hepatocytes, p-Value = 2.63730278735612e-05 ."
+[1] "Curcumin Cl_int = 2.1661291598929 uL/min/million hepatocytes, p-Value = 2.54396286245191e-49 ."
+[1] "4-Nitroaniline Cl_int = 0.172123145184546 uL/min/million hepatocytes, p-Value = 8.05251900062822e-26 ."
+[1] "CP-544439 Cl_int = 0.0116093855272161 uL/min/million hepatocytes, p-Value = 0.0078104498323184 ."
+[1] "Cymoxanil Cl_int = 0.403159459477117 uL/min/million hepatocytes, p-Value = 4.68380246665446e-22 ."
+[1] "2,3-Dihydro-2,2-dimethyl-7-benzofuranol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Tembotrione Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Zearalenone Cl_int = 1.18152453347441 uL/min/million hepatocytes, p-Value = 9.54910332129047e-47 ."
+[1] "Triclopyr butotyl Cl_int = 32.1332927835203 uL/min/million hepatocytes, p-Value = 2.29326968583202e-83 ."
+[1] "Benzylparaben Cl_int = 30.8645338902015 uL/min/million hepatocytes, p-Value = 3.86529173446664e-78 ."
+[1] "Hexachlorophene Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Bisdemethoxycurcumin Cl_int = 0.15153315131905 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-(2-Phenylpropan-2-yl)-N-[4-(2-phenylpropan-2-yl)phenyl]aniline Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Nordihydroguaiaretic acid Cl_int = 1.68053020881556 uL/min/million hepatocytes, p-Value = 4.86099773127542e-62 ."
+[1] "Sodium tridecyl sulfate Cl_int = 0.231135417313928 uL/min/million hepatocytes, p-Value = 5.65221722981044e-10 ."
+[1] "Carminic acid Cl_int = 0.476995976498853 uL/min/million hepatocytes, p-Value = 6.58755535625722e-09 ."
+[1] "Naphthalen-2-yl 2-aminobenzoate Cl_int = 26.0133759981467 uL/min/million hepatocytes, p-Value = 5.51428984650544e-65 ."
+[1] "N,N,N',N'-Tetrakis(2-Hydroxypropyl)ethylenediamine Cl_int = 0.144870567019908 uL/min/million hepatocytes, p-Value = 0.369436704957561 ."
+[1] "3-Methylanulline Cl_int = 0.211423569732616 uL/min/million hepatocytes, p-Value = 1.90971594050928e-10 ."
+[1] "Sucrose octaacetate Cl_int = 3.22926301919335 uL/min/million hepatocytes, p-Value = 6.57932497088153e-87 ."
+[1] "Octabenzone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Clorophene Cl_int = 0.254236303011916 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "PharmaGSID_48510 Cl_int = 0.060889292728115 uL/min/million hepatocytes, p-Value = 4.82063172054422e-27 ."
+[1] "PharmaGSID_48505 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-Methylaniline Cl_int = 0.0731411081150924 uL/min/million hepatocytes, p-Value = 9.26725305612191e-08 ."
+[1] "Michler's ketone Cl_int = 0.305225828968737 uL/min/million hepatocytes, p-Value = 1.01855616941553e-16 ."
+[1] "C.I. Solvent Orange 7 Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Azobenzene Cl_int = 1.79011502755243 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "1,2-Diphenylhydrazine Cl_int = 0.354548733145616 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Quizalofop-ethyl Cl_int = 2.48131235668612 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,4,5-Trichlorophenoxyacetic acid Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "3,5-Dichlorosalicyl-3,4-dichloroanullide Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Propachlor Cl_int = 1.61888928857482 uL/min/million hepatocytes, p-Value = 3.83231539615699e-08 ."
+[1] "Clomipramine hydrochloride Cl_int = 0.105461301469842 uL/min/million hepatocytes, p-Value = 0.878905989301888 ."
+[1] "Haloxyfop-methyl Cl_int = 32.4968216177882 uL/min/million hepatocytes, p-Value = 1.45638896406517e-30 ."
+[1] "Benomyl Cl_int = 0.516323608923751 uL/min/million hepatocytes, p-Value = 4.67347189210725e-10 ."
+[1] "Propanull Cl_int = 0.250642089009187 uL/min/million hepatocytes, p-Value = 0.000592940617335241 ."
+[1] "Phosalone Cl_int = 0.496703869340217 uL/min/million hepatocytes, p-Value = 1.1908003898872e-09 ."
+[1] "C.I. Solvent Red 49 Cl_int = 0.29066377170131 uL/min/million hepatocytes, p-Value = 4.24181496447608e-05 ."
+[1] "Oxadiazon Cl_int = 0.10043257701473 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Paraoxon Cl_int = 0.0577178978577044 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Aldoxycarb Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Sulfotepp Cl_int = 0.957795234812773 uL/min/million hepatocytes, p-Value = 1.45174764495234e-82 ."
+[1] "Amitraz Cl_int = 0.835883744818283 uL/min/million hepatocytes, p-Value = 1.07835810416562e-39 ."
+[1] "Prometon Cl_int = 0.0248158094239191 uL/min/million hepatocytes, p-Value = 6.00527603149638e-10 ."
+[1] "2',4',5',7'-Tetrabromofluorescein Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Malathion Cl_int = 4.99491378825634 uL/min/million hepatocytes, p-Value = 8.76771446452383e-38 ."
+Error in solve.default(oout$hessian) : 
+  Lapack routine dgesv: system is exactly singular: U[2,2] = 0
+Linear regression failed for: p,p'-DDE .
+[1] "Cotinine Cl_int = 0.0414923979797507 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "4-Pentylaniline Cl_int = 0.507076459707398 uL/min/million hepatocytes, p-Value = 2.29937376955932e-16 ."
+[1] "Dapsone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "PD-0333941 Cl_int = 0.0493778212442684 uL/min/million hepatocytes, p-Value = 2.24269123292371e-20 ."
+[1] "2,3,4,6-Tetrachlorophenol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Captafol Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Clofentezine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Sodium chlorite Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2,4-Diaminotoluene Cl_int = 0.0967714921503334 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "1,3-Benzenediamine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2-Chloroacetophenone Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "Nicotinic acid Cl_int = 0.059108391093542 uL/min/million hepatocytes, p-Value = 1.47379690912289e-07 ."
+[1] "Stavudine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+[1] "2',3'-Dideoxyinosine Cl_int = 0 uL/min/million hepatocytes, p-Value = 1 ."
+A level-3 file named Wambaugh2019_regen2025-Clint-Level3.tsv has been exported to the following directory: C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019/data 
+[1] "Intrinsic clearance (Clint) calculated for 473 chemicals."
+[1] "Intrinsic clearance (Clint) calculated for 473 measurements."
+> tictoc::toc()
+32.97 sec elapsed
+> #------------------------------------------------------------------------------#
+> ## Save Data ##
+> # save the primary data
+> save(
++   wambaugh2019.clint.L0,
++   wambaugh2019.clint.L1,
++   wambaugh2019.clint.L2,
++   wambaugh2019.clint.L3,
++   file = here::here("data/Wambaugh2019_regen2025_Clint_L1-3.RData")
++ )
+> # save supplementary files
+> save(
++   EC_wambaugh2019.clint,
++   file = here::here("data/Wambaugh2019_regen2025_Clint_supp.RData")
++ )
+> #------------------------------------------------------------------------------#
+> ## Session Information ##
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1            tictoc_1.2.1          stringr_1.5.1        
+[4] magrittr_2.0.3        dplyr_1.1.4           invitroTKstats_0.0.13
+
+loaded via a namespace (and not attached):
+ [1] vctrs_0.6.5        cli_3.6.5          rlang_1.1.6        stringi_1.8.7     
+ [5] generics_0.1.4     glue_1.8.0         rprojroot_2.0.4    stats4_4.4.2      
+ [9] readxl_1.4.5       scales_1.4.0       grid_4.4.2         cellranger_1.1.0  
+[13] tibble_3.3.0       lifecycle_1.0.4    compiler_4.4.2     coda_0.19-4.1     
+[17] RColorBrewer_1.1-3 pkgconfig_2.0.3    rstudioapi_0.17.1  runjags_2.2.2-5   
+[21] farver_2.1.2       lattice_0.22-7     R6_2.6.1           tidyselect_1.2.1  
+[25] pillar_1.10.2      Rdpack_2.6.4       parallel_4.4.2     rbibutils_2.3     
+[29] tools_4.4.2        gtable_0.3.6       ggplot2_3.5.2     
+> Sys.time()
+[1] "2025-07-01 14:41:54 EDT"
+> #------------------------------------------------------------------------------#
+> 
+> proc.time()
+   user  system elapsed 
+  10.04    0.48   50.00 
