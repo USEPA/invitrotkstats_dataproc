@@ -1,0 +1,366 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #=============================================================================#
+> ## Title: QC Level-1 Wambaugh 2019 fup-RED
+> #=============================================================================#
+> ## R Packages ##
+> library(dplyr)
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+Warning message:
+package 'dplyr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(here)
+here() starts at C:/Users/SDAVID02/OneDrive - Environmental Protection Agency (EPA)/Profile/Documents/Git/invitrotkstats_split/invitrotkstats_dataproc/invitrotkstats_dataproc/working/Wambaugh2019
+Warning message:
+package 'here' was built under R version 4.4.3 
+> ## Load in Data ##
+> load(here::here("data/Wambaugh2019_regen2025_fupRED_L1-3.RData"),verbose = TRUE)
+Loading objects:
+  wambaugh2019.red.L0
+  wambaugh2019.red.L1
+  wambaugh2019.red.L2
+  wambaugh2019.red.L3
+> #=============================================================================#
+> ## Items to Check:
+> ##  1) Determine if there are any columns with missing information (NA's).
+> ##      a) Are the columns with missing information handled by the fup-RED estimation.
+> ##      b) For the columns with missing information not handled by the fup-RED
+> ##         estimation, determine the samples that need to be 'unverified'.
+> ##  2) Determine if there are any chemicals that do not have sufficient sample
+> ##     type information.
+> ##  3) Determine if there are any responses reported as "infinite", and
+> ##     if YES then identify them to be 'unverified'.
+> #=============================================================================#
+> ## Investigate L1 Data ##
+> sapply(wambaugh2019.red.L1,class) # determine the class of each column
+           Lab.Sample.Name                       Date 
+               "character"                "character" 
+             Compound.Name                     DTXSID 
+               "character"                "character" 
+         Lab.Compound.Name                Sample.Type 
+               "character"                "character" 
+           Dilution.Factor                Calibration 
+                 "numeric"                "character" 
+                 ISTD.Name                  ISTD.Conc 
+               "character"                  "numeric" 
+                 ISTD.Area                       Area 
+                 "numeric"                  "numeric" 
+           Analysis.Method        Analysis.Instrument 
+               "character"                "character" 
+       Analysis.Parameters                       Note 
+               "character"                "character" 
+               Level0.File               Level0.Sheet 
+               "character"                "character" 
+                      Time         Test.Compound.Conc 
+                 "numeric"                  "numeric" 
+         Test.Nominal.Conc Percent.Physiologic.Plasma 
+                 "numeric"                  "numeric" 
+     Biological.Replicates       Technical.Replicates 
+                 "numeric"                  "numeric" 
+                  Response 
+                 "numeric" 
+> summary(wambaugh2019.red.L1) # obtain a summary of values in each column
+ Lab.Sample.Name        Date           Compound.Name         DTXSID         
+ Length:15990       Length:15990       Length:15990       Length:15990      
+ Class :character   Class :character   Class :character   Class :character  
+ Mode  :character   Mode  :character   Mode  :character   Mode  :character  
+                                                                            
+                                                                            
+                                                                            
+                                                                            
+ Lab.Compound.Name  Sample.Type        Dilution.Factor Calibration       
+ Length:15990       Length:15990       Min.   :1.000   Length:15990      
+ Class :character   Class :character   1st Qu.:1.000   Class :character  
+ Mode  :character   Mode  :character   Median :1.000   Mode  :character  
+                                       Mean   :2.105                     
+                                       3rd Qu.:2.000                     
+                                       Max.   :5.000                     
+                                                                         
+  ISTD.Name           ISTD.Conc   ISTD.Area             Area          
+ Length:15990       Min.   :1   Min.   :       0   Min.   :   -19513  
+ Class :character   1st Qu.:1   1st Qu.:   89503   1st Qu.:      719  
+ Mode  :character   Median :1   Median :  133355   Median :    23789  
+                    Mean   :1   Mean   :  862328   Mean   :  1715624  
+                    3rd Qu.:1   3rd Qu.:  365717   3rd Qu.:   289093  
+                    Max.   :1   Max.   :30910000   Max.   :221600000  
+                                NA's   :353        NA's   :3140       
+ Analysis.Method    Analysis.Instrument Analysis.Parameters     Note          
+ Length:15990       Length:15990        Length:15990        Length:15990      
+ Class :character   Class :character    Class :character    Class :character  
+ Mode  :character   Mode  :character    Mode  :character    Mode  :character  
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+ Level0.File        Level0.Sheet            Time     Test.Compound.Conc
+ Length:15990       Length:15990       Min.   :120   Min.   :5         
+ Class :character   Class :character   1st Qu.:120   1st Qu.:5         
+ Mode  :character   Mode  :character   Median :120   Median :5         
+                                       Mean   :120   Mean   :5         
+                                       3rd Qu.:120   3rd Qu.:5         
+                                       Max.   :120   Max.   :5         
+                                                                       
+ Test.Nominal.Conc Percent.Physiologic.Plasma Biological.Replicates
+ Min.   :5         Min.   : 10.00             Min.   :1            
+ 1st Qu.:5         1st Qu.: 10.00             1st Qu.:1            
+ Median :5         Median : 30.00             Median :1            
+ Mean   :5         Mean   : 48.62             Mean   :1            
+ 3rd Qu.:5         3rd Qu.:100.00             3rd Qu.:1            
+ Max.   :5         Max.   :100.00             Max.   :1            
+                                                                   
+ Technical.Replicates    Response       
+ Min.   :1            Min.   :  -0.128  
+ 1st Qu.:1            1st Qu.:   0.005  
+ Median :1            Median :   0.139  
+ Mean   :1            Mean   :   9.408  
+ 3rd Qu.:1            3rd Qu.:   1.382  
+ Max.   :1            Max.   :1259.718  
+                      NA's   :3272      
+> 
+> ## Missing Value Check ##
+> sapply(wambaugh2019.red.L1,anyNA) %>% .[which(.)] # determine the NA's
+ISTD.Area      Area  Response 
+     TRUE      TRUE      TRUE 
+>   # Dilution.Factor - If "Dilution.Factor" is missing for required samples,
+>   #                   then there is a problem.
+>   # Calibration - Currently no issue if Calibration is missing.
+>   # ISTD.Area - Currently no issue if ISTD.Area is missing.
+>   # Area - Currently no issue if Area is missing.
+>   # Response - Currently no issue if Response is missing.
+> 
+> # identify if there are any required samples with a missing 'Dilution.Factor'
+> dplyr::filter(wambaugh2019.red.L1,is.na(Dilution.Factor)) %>% 
++   dplyr::group_by(.,DTXSID) %>% 
++   dplyr::summarise(.,
++                    T0.DF.Missing.Count = sum(Sample.Type == "T0"),
++                    PBS.DF.Missing.Count = sum(Sample.Type == "PBS"),
++                    Plasma.DF.Missing.Count = sum(Sample.Type == "Plasma")) %>% 
++   dplyr::mutate(.,
++                 T0.DF.Missing = (T0.DF.Missing.Count != 0),
++                 PBS.DF.Missing = (PBS.DF.Missing.Count != 0),
++                 Plasma.DF.Missing = (Plasma.DF.Missing.Count != 0)) %>% 
++   dplyr::filter(.,PBS.DF.Missing|Plasma.DF.Missing)
+# A tibble: 0 × 7
+# ℹ 7 variables: DTXSID <chr>, T0.DF.Missing.Count <int>,
+#   PBS.DF.Missing.Count <int>, Plasma.DF.Missing.Count <int>,
+#   T0.DF.Missing <lgl>, PBS.DF.Missing <lgl>, Plasma.DF.Missing <lgl>
+> # identify the samples with a missing 'Calibration'
+> missing.calibration <- dplyr::filter(wambaugh2019.red.L1,is.na(Calibration)) %>% 
++   dplyr::distinct(.,DTXSID)
+> # characterize the count of samples with missing and non-missing calibration
+> dplyr::filter(wambaugh2019.red.L1,DTXSID %in% missing.calibration[,1]) %>% 
++   dplyr::group_by(.,DTXSID) %>% 
++   dplyr::summarise(.,
++                    Cal.Missing.Count = sum(is.na(Calibration)),
++                    Cal.nonMissing.Count = sum(!is.na(Calibration))) %>% 
++   print(n = nrow(.))
+# A tibble: 0 × 3
+# ℹ 3 variables: DTXSID <chr>, Cal.Missing.Count <int>,
+#   Cal.nonMissing.Count <int>
+> # characterize the calibrations for the chemicals with at least one missing calibration
+> dplyr::filter(wambaugh2019.red.L1,DTXSID %in% missing.calibration[,1]) %>% 
++   dplyr::group_by(.,DTXSID) %>% 
++   dplyr::distinct(.,Calibration) %>%
++   dplyr::arrange(.,DTXSID) %>% 
++   print(n = nrow(.))
+# A tibble: 0 × 2
+# Groups:   DTXSID [0]
+# ℹ 2 variables: DTXSID <chr>, Calibration <chr>
+> 
+> ## Sample Type Check ##
+> # determine the counts of the required sample types & if there are any missing
+> missing.sample.types <- dplyr::group_by(wambaugh2019.red.L1,DTXSID) %>%
++   dplyr::select(.,c(DTXSID,Sample.Type)) %>% 
++   dplyr::summarise(.,
++                    Plasma.Count = sum(Sample.Type == "Plasma"),
++                    PBS.Count = sum(Sample.Type == "PBS"),
++                    Plasma.Blank.Count = sum(Sample.Type == "Plasma.Blank")) %>% 
++   dplyr::mutate(.,
++                 Plasma.Missing = (Plasma.Count == 0),
++                 PBS.Missing = (PBS.Count == 0),
++                 Plasma.Blank.Missing = (Plasma.Blank.Count == 0))
+> # filter for chemicals that have any of the required samples missing
+> # missing Plasma, PBS, or Plasma.Blank
+> missing.sample.types %>% 
++   dplyr::filter(.,Plasma.Missing|PBS.Missing|Plasma.Blank.Missing) %>% 
++   print(n = nrow(.))
+# A tibble: 87 × 7
+   DTXSID   Plasma.Count PBS.Count Plasma.Blank.Count Plasma.Missing PBS.Missing
+   <chr>           <int>     <int>              <int> <lgl>          <lgl>      
+ 1 DTXSID0…            6         0                  0 FALSE          TRUE       
+ 2 DTXSID0…            6         6                  0 FALSE          FALSE      
+ 3 DTXSID0…            2         0                  0 FALSE          TRUE       
+ 4 DTXSID0…            4         4                  0 FALSE          FALSE      
+ 5 DTXSID0…            6         6                  0 FALSE          FALSE      
+ 6 DTXSID0…            6         0                  0 FALSE          TRUE       
+ 7 DTXSID0…            0         6                  0 TRUE           FALSE      
+ 8 DTXSID0…            6         6                  0 FALSE          FALSE      
+ 9 DTXSID0…            6         6                  0 FALSE          FALSE      
+10 DTXSID1…            6         6                  0 FALSE          FALSE      
+11 DTXSID1…            6         6                  0 FALSE          FALSE      
+12 DTXSID1…            6         6                  0 FALSE          FALSE      
+13 DTXSID1…            6         6                  0 FALSE          FALSE      
+14 DTXSID1…            6         6                  0 FALSE          FALSE      
+15 DTXSID1…            6         6                  0 FALSE          FALSE      
+16 DTXSID1…            0         6                  0 TRUE           FALSE      
+17 DTXSID1…            6         6                  0 FALSE          FALSE      
+18 DTXSID1…            6         6                  0 FALSE          FALSE      
+19 DTXSID2…            6         0                  0 FALSE          TRUE       
+20 DTXSID2…            6         6                  0 FALSE          FALSE      
+21 DTXSID2…            6         6                  0 FALSE          FALSE      
+22 DTXSID2…            6         0                  0 FALSE          TRUE       
+23 DTXSID2…            6         0                  0 FALSE          TRUE       
+24 DTXSID2…            6         6                  0 FALSE          FALSE      
+25 DTXSID2…            6         6                  0 FALSE          FALSE      
+26 DTXSID2…            6         6                  0 FALSE          FALSE      
+27 DTXSID2…            6         0                  0 FALSE          TRUE       
+28 DTXSID2…            6         6                  0 FALSE          FALSE      
+29 DTXSID2…            6         6                  0 FALSE          FALSE      
+30 DTXSID3…            0         6                  0 TRUE           FALSE      
+31 DTXSID3…            6         6                  0 FALSE          FALSE      
+32 DTXSID3…            6         0                  0 FALSE          TRUE       
+33 DTXSID3…            0         6                  0 TRUE           FALSE      
+34 DTXSID3…            6         6                  0 FALSE          FALSE      
+35 DTXSID4…            6         0                  0 FALSE          TRUE       
+36 DTXSID4…            6         6                  0 FALSE          FALSE      
+37 DTXSID4…            6         0                  0 FALSE          TRUE       
+38 DTXSID4…            6         6                  0 FALSE          FALSE      
+39 DTXSID4…            6         6                  0 FALSE          FALSE      
+40 DTXSID4…            6         0                  0 FALSE          TRUE       
+41 DTXSID4…            6         6                  0 FALSE          FALSE      
+42 DTXSID4…            6         0                  0 FALSE          TRUE       
+43 DTXSID4…            6         0                  0 FALSE          TRUE       
+44 DTXSID5…            4         0                  0 FALSE          TRUE       
+45 DTXSID5…            4         4                  0 FALSE          FALSE      
+46 DTXSID5…            2         2                  0 FALSE          FALSE      
+47 DTXSID5…            6         0                  0 FALSE          TRUE       
+48 DTXSID5…            4         4                  0 FALSE          FALSE      
+49 DTXSID5…            6         6                  0 FALSE          FALSE      
+50 DTXSID5…            6         6                  0 FALSE          FALSE      
+51 DTXSID6…            6         0                  0 FALSE          TRUE       
+52 DTXSID6…            6         6                  0 FALSE          FALSE      
+53 DTXSID6…            2         2                  0 FALSE          FALSE      
+54 DTXSID6…            0         6                  0 TRUE           FALSE      
+55 DTXSID6…            0         6                  0 TRUE           FALSE      
+56 DTXSID6…            6         0                  0 FALSE          TRUE       
+57 DTXSID6…            6         6                  0 FALSE          FALSE      
+58 DTXSID7…            6         0                  0 FALSE          TRUE       
+59 DTXSID7…            6         0                  0 FALSE          TRUE       
+60 DTXSID7…            6         6                  0 FALSE          FALSE      
+61 DTXSID7…            6         6                  0 FALSE          FALSE      
+62 DTXSID7…            6         6                  0 FALSE          FALSE      
+63 DTXSID7…            6         6                  0 FALSE          FALSE      
+64 DTXSID7…            6         0                  0 FALSE          TRUE       
+65 DTXSID8…            6         0                  0 FALSE          TRUE       
+66 DTXSID8…            6         6                  0 FALSE          FALSE      
+67 DTXSID8…            6         6                  0 FALSE          FALSE      
+68 DTXSID8…            6         6                  0 FALSE          FALSE      
+69 DTXSID8…            6         6                  0 FALSE          FALSE      
+70 DTXSID8…            6         6                  0 FALSE          FALSE      
+71 DTXSID8…            6         6                  0 FALSE          FALSE      
+72 DTXSID8…            6         0                  0 FALSE          TRUE       
+73 DTXSID8…            4         4                  0 FALSE          FALSE      
+74 DTXSID9…            6         6                  0 FALSE          FALSE      
+75 DTXSID9…            6         0                  0 FALSE          TRUE       
+76 DTXSID9…            6         6                  0 FALSE          FALSE      
+77 DTXSID9…            6         0                  0 FALSE          TRUE       
+78 DTXSID9…            6         6                  0 FALSE          FALSE      
+79 DTXSID9…            6         0                  0 FALSE          TRUE       
+80 DTXSID9…            6         0                  0 FALSE          TRUE       
+81 DTXSID9…            6         6                  0 FALSE          FALSE      
+82 DTXSID9…            6         6                  0 FALSE          FALSE      
+83 DTXSID9…            6         6                  0 FALSE          FALSE      
+84 DTXSID9…            6         6                  0 FALSE          FALSE      
+85 DTXSID9…            6         6                  0 FALSE          FALSE      
+86 DTXSID9…            6         6                  0 FALSE          FALSE      
+87 DTXSID9…            6         6                  0 FALSE          FALSE      
+# ℹ 1 more variable: Plasma.Blank.Missing <lgl>
+> 
+> ## Infinite Response Check ##
+> # identify the samples with an infinite response
+> dplyr::filter(wambaugh2019.red.L1,Response == "Inf")
+ [1] Lab.Sample.Name            Date                      
+ [3] Compound.Name              DTXSID                    
+ [5] Lab.Compound.Name          Sample.Type               
+ [7] Dilution.Factor            Calibration               
+ [9] ISTD.Name                  ISTD.Conc                 
+[11] ISTD.Area                  Area                      
+[13] Analysis.Method            Analysis.Instrument       
+[15] Analysis.Parameters        Note                      
+[17] Level0.File                Level0.Sheet              
+[19] Time                       Test.Compound.Conc        
+[21] Test.Nominal.Conc          Percent.Physiologic.Plasma
+[23] Biological.Replicates      Technical.Replicates      
+[25] Response                  
+<0 rows> (or 0-length row.names)
+> #=============================================================================#
+> ## Session Information ##
+> Sys.time()
+[1] "2025-07-09 15:18:00 EDT"
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] here_1.0.1     stringr_1.5.1  magrittr_2.0.3 dplyr_1.1.4   
+
+loaded via a namespace (and not attached):
+ [1] utf8_1.2.6        R6_2.6.1          tidyselect_1.2.1  glue_1.8.0       
+ [5] tibble_3.3.0      pkgconfig_2.0.3   generics_0.1.4    lifecycle_1.0.4  
+ [9] cli_3.6.5         vctrs_0.6.5       withr_3.0.2       compiler_4.4.2   
+[13] rprojroot_2.0.4   rstudioapi_0.17.1 tools_4.4.2       pillar_1.10.2    
+[17] rlang_1.1.6       stringi_1.8.7    
+> #=============================================================================#
+> 
+> proc.time()
+   user  system elapsed 
+   0.56    0.39    4.92 
