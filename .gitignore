@@ -49,6 +49,8 @@ final_RData/gitpath*.RData
 # R out files from programmatically running data for package script - ignore for now
 final_RData/*[0-9].Rout
 final_RData/Rout_archive
+# ignore R Data files marked as "uncompressed"
+final_RData/packageready_data/*uncomp.RData
 
 # Ignore Temporary/Draft/Intermediate Files #
 working/Wambaugh2019/TMP*
