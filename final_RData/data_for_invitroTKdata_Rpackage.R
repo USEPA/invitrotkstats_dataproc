@@ -238,28 +238,28 @@ if(ow){
        wambaugh2019.clint.L3,wambaugh2019.red.L3,
        wambaugh2019.clint.L4,wambaugh2019.red.L4,
        file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
-       version=2)
+       version=2,compress = "xz")
   ## Smeltz et al. 2023 ##
   cat("UPDATE WRITE OUT: Smeltz et al. 2023\n")
   save(smeltz2023.red,smeltz2023.uc,smeltz2023.clint,
        smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
        smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
        file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
-       version=2)
+       version=2,compress = "xz")
   ## Kreutz et al. 2023 ##
   cat("UPDATE WRITE OUT: Kreutz et al. 2023\n")
   save(kreutz2023.uc,kreutz2023.clint,
        kreutz2023.uc.L3,kreutz2023.clint.L3,
        kreutz2023.uc.L4,kreutz2023.clint.L4,
        file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
-       version=2)
+       version=2,compress = "xz")
   ## Crizer et al. 2024 ##
   cat("UPDATE WRITE OUT: Crizer et al. 2024\n")
   save(crizer2024.clint,
        crizer2024.clint.L3,
        crizer2024.clint.L4,
        file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
-       version=2)
+       version=2,compress = "xz")
 }else{
   # print notification that files will NOT be overwritten, unless update individual FALSE (uindF)
   cat("Overwrite is set to FALSE (default), only write out files with NA, or FALSE and uindF=TRUE.\n")
@@ -270,7 +270,7 @@ if(ow){
          wambaugh2019.clint.L3,wambaugh2019.red.L3,
          wambaugh2019.clint.L4,wambaugh2019.red.L4,
          file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
-         version=2)
+         version=2,compress = "xz")
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^wambaugh2019")])!=TRUE)){
     if(uindF){
       cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Wambaugh et al. 2019\n")
@@ -278,7 +278,7 @@ if(ow){
            wambaugh2019.clint.L3,wambaugh2019.red.L3,
            wambaugh2019.clint.L4,wambaugh2019.red.L4,
            file=paste(final_RData_path,"Wambaugh2019.RData",sep = "/"),
-           version=2)
+           version=2,compress = "xz")
     }else{
       cat("SKIP (at least one FALSE): Wambaugh et al. 2019 - file already exists and identifying differences\n")
     }
@@ -292,7 +292,7 @@ if(ow){
          smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
          smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
          file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
-         version=2)
+         version=2,compress = "xz")
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
     if(uindF){
       cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Smeltz et al. 2023\n")
@@ -300,7 +300,7 @@ if(ow){
            smeltz2023.red.L3,smeltz2023.uc.L3,smeltz2023.clint.L3,
            smeltz2023.red.L4,smeltz2023.uc.L4,smeltz2023.clint.L4,
            file=paste(final_RData_path,"Smeltz2023.RData",sep = "/"),
-           version=2)
+           version=2,compress = "xz")
     }else{
       cat("SKIP (at least one FALSE): Smeltz et al. 2023 - file already exists and identifying differences\n")
     }
@@ -314,7 +314,7 @@ if(ow){
          kreutz2023.uc.L3,kreutz2023.clint.L3,
          kreutz2023.uc.L4,kreutz2023.clint.L4,
          file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
-         version=2)
+         version=2,compress = "xz")
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^smeltz2023")])!=TRUE)){
     if(uindF){
       cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Kreutz et al. 2023\n")
@@ -322,7 +322,7 @@ if(ow){
            kreutz2023.uc.L3,kreutz2023.clint.L3,
            kreutz2023.uc.L4,kreutz2023.clint.L4,
            file=paste(final_RData_path,"Kreutz2023.RData",sep = "/"),
-           version=2)
+           version=2,compress = "xz")
     }else{
       cat("SKIP (at least one FALSE): Kreutz et al. 2023 - file already exists and identifying differences\n")
     }
@@ -336,7 +336,7 @@ if(ow){
          crizer2024.clint.L3,
          crizer2024.clint.L4,
          file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
-         version=2)
+         version=2,compress = "xz")
   }else if(any((test_equal_res[grepl(names(test_equal_res),pattern = "^crizer2024")])!=TRUE)){
     if(uindF){
       cat("UPDATE WRITE OUT (at least one FALSE, individual update via `uindF`): Crizer et al. 2024\n")
@@ -344,7 +344,7 @@ if(ow){
            crizer2024.clint.L3,
            crizer2024.clint.L4,
            file=paste(final_RData_path,"Crizer2024.RData",sep = "/"),
-           version=2)
+           version=2,compress = "xz")
     }else{
       cat("SKIP (at least one FALSE): Crizer et al. 2024 - file already exists and identifying differences\n")
     }
