@@ -1,0 +1,206 @@
+
+R version 4.4.2 (2024-10-31 ucrt) -- "Pile of Leaves"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-w64-mingw32/x64
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> #-----------------------------------------------------------------------------#
+> ## Re-Save and Compress Package Ready R Data Files ##
+> #-----------------------------------------------------------------------------#
+> ## NOTES:
+> ##  * Move the package ready data (previous generated) to alternative filename
+> ##    (i.e. add suffix "_uncomp") to indicate these are uncompressed files.
+> ##  * Update the .gitignore file to ignore R datafiles marked as uncompressed.
+> ##  * Run this script with "R CMD BATCH --vanilla <filename>"
+> ##    (generally meant to be a one time run - though may be necessary in future).
+> #-----------------------------------------------------------------------------#
+> ## R Packages ##
+> library(stringr)
+Warning message:
+package 'stringr' was built under R version 4.4.3 
+> library(magrittr)
+Warning message:
+package 'magrittr' was built under R version 4.4.3 
+> #-----------------------------------------------------------------------------#
+> ## Data Directories ##
+> # load the Git_path object
+> load(file = paste(getwd(),"gitpath.RData",sep = "/"),verbose = TRUE)
+Loading objects:
+  Git_path
+> # set up the final_Rdata_path object
+> final_RData_path <- paste(getwd(),"packageready_data",sep = "/")
+> archive_RData_path <- paste(getwd(),"archive",sep = "/")
+> #-----------------------------------------------------------------------------#
+> ## Load in Data
+> # list the files in the 'archive' directory
+> archive_Rdata_files <- list.files(path = archive_RData_path)
+> # load in the datasets
+> for(i in archive_Rdata_files){
++   load(file = paste(archive_RData_path,i,sep = "/"),verbose = TRUE)
++ }
+Loading objects:
+  kreutz2023.uc
+  kreutz2023.clint
+Loading objects:
+  smeltz2023.red
+  smeltz2023.uc
+  smeltz2023.clint
+> # re-assign the files with suffix 'curr.arch' (current archive)
+> for(i in ls(pattern = "clint$|uc$|red$")){
++   cat(paste0(i,".curr.arch"),"\n")
++   assign(x = paste0(i,".curr.arch"),value = get(i))
++ }
+kreutz2023.clint.curr.arch 
+kreutz2023.uc.curr.arch 
+smeltz2023.clint.curr.arch 
+smeltz2023.red.curr.arch 
+smeltz2023.uc.curr.arch 
+> # remove the original archive objects
+> rm(list = ls(pattern = "clint$|uc$|red$"))
+> 
+> # list the files in the 'final' package ready directory
+> final_RData_files <- list.files(path = final_RData_path,pattern = "uncomp")
+> # load in the datasets
+> for(i in final_RData_files){
++   load(file = paste(final_RData_path,i,sep = "/"),verbose = TRUE)
++ }
+Loading objects:
+  crizer2024.clint
+  crizer2024.clint.L3
+  crizer2024.clint.L4
+Loading objects:
+  kreutz2023.uc
+  kreutz2023.clint
+  kreutz2023.uc.L3
+  kreutz2023.clint.L3
+  kreutz2023.uc.L4
+  kreutz2023.clint.L4
+Loading objects:
+  smeltz2023.red
+  smeltz2023.uc
+  smeltz2023.clint
+  smeltz2023.red.L3
+  smeltz2023.uc.L3
+  smeltz2023.clint.L3
+  smeltz2023.red.L4
+  smeltz2023.uc.L4
+  smeltz2023.clint.L4
+Loading objects:
+  wambaugh2019.clint
+  wambaugh2019.red
+  wambaugh2019.clint.L3
+  wambaugh2019.red.L3
+  wambaugh2019.clint.L4
+  wambaugh2019.red.L4
+> #-----------------------------------------------------------------------------#
+> ## Checks Between Current Archive and Current Final
+> archived_obj <- ls(pattern = "curr.arch")
+> for(i in archived_obj){
++   cat("Check:",i,"vs",stringr::str_remove(i,".curr.arch"),"\n")
++   print(all.equal(get(i),get(stringr::str_remove(i,".curr.arch"))))
++ }
+Check: kreutz2023.clint.curr.arch vs kreutz2023.clint 
+[1] TRUE
+Check: kreutz2023.uc.curr.arch vs kreutz2023.uc 
+[1] TRUE
+Check: smeltz2023.clint.curr.arch vs smeltz2023.clint 
+[1] TRUE
+Check: smeltz2023.red.curr.arch vs smeltz2023.red 
+[1] TRUE
+Check: smeltz2023.uc.curr.arch vs smeltz2023.uc 
+[1] TRUE
+> #-----------------------------------------------------------------------------#
+> ## Re-save Data with Further Compression
+> pckg_ready_data <- stringr::str_remove(final_RData_files,pattern = "_uncomp.RData") %>%
++   tolower()
+> pckg_comp_data <- stringr::str_replace(final_RData_files,
++                                        pattern = "_uncomp.RData",
++                                        replacement = ".RData")
+> # re-save the objects with compression
+> for(i in pckg_ready_data){
++   # print the overarching dataset to be saved
++   cat(i,"\n")
++   # identify the objects to save in the RData file
++   save_obj <- ls(pattern = i) %>% .[!grepl(.,pattern = "curr.arch")] # ignore those with "curr.arch" (i.e. current archived items)
++   print(save_obj) # print the objects that will be saved
++   # identify the save name for the output file
++   save_filename <- pckg_comp_data[grepl(x = pckg_comp_data,pattern = i,ignore.case = TRUE)]
++   print(save_filename) # print the filename that objects will be saved to
++   # check if there currently are any 'compressed' RData files
++   check <- list.files(path = final_RData_path,pattern = save_filename)
++   if(length(check)==0){
++     # re-save objects (untagged - indicating 'compression')
++     save(list = save_obj,file = paste(final_RData_path,save_filename,sep = "/"),
++          compress = "xz")
++   }else{
++     cat("SKIP: A compressed file already exists for:",i,"\n")
++   }
++ }
+crizer2024 
+[1] "crizer2024.clint"    "crizer2024.clint.L3" "crizer2024.clint.L4"
+[1] "Crizer2024.RData"
+kreutz2023 
+[1] "kreutz2023.clint"    "kreutz2023.clint.L3" "kreutz2023.clint.L4"
+[4] "kreutz2023.uc"       "kreutz2023.uc.L3"    "kreutz2023.uc.L4"   
+[1] "Kreutz2023.RData"
+smeltz2023 
+[1] "smeltz2023.clint"    "smeltz2023.clint.L3" "smeltz2023.clint.L4"
+[4] "smeltz2023.red"      "smeltz2023.red.L3"   "smeltz2023.red.L4"  
+[7] "smeltz2023.uc"       "smeltz2023.uc.L3"    "smeltz2023.uc.L4"   
+[1] "Smeltz2023.RData"
+wambaugh2019 
+[1] "wambaugh2019.clint"    "wambaugh2019.clint.L3" "wambaugh2019.clint.L4"
+[4] "wambaugh2019.red"      "wambaugh2019.red.L3"   "wambaugh2019.red.L4"  
+[1] "Wambaugh2019.RData"
+> cat("END OF RESAVE","\n")
+END OF RESAVE 
+> #-----------------------------------------------------------------------------#
+> ## Session Information
+> Sys.time()
+[1] "2025-07-29 09:30:38 EDT"
+> sessionInfo()
+R version 4.4.2 (2024-10-31 ucrt)
+Platform: x86_64-w64-mingw32/x64
+Running under: Windows 11 x64 (build 22631)
+
+Matrix products: default
+
+
+locale:
+[1] LC_COLLATE=English_United States.utf8 
+[2] LC_CTYPE=English_United States.utf8   
+[3] LC_MONETARY=English_United States.utf8
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.utf8    
+
+time zone: America/New_York
+tzcode source: internal
+
+attached base packages:
+[1] stats     graphics  grDevices utils     datasets  methods   base     
+
+other attached packages:
+[1] magrittr_2.0.3 stringr_1.5.1 
+
+loaded via a namespace (and not attached):
+[1] compiler_4.4.2    cli_3.6.5         tools_4.4.2       glue_1.8.0       
+[5] rstudioapi_0.17.1 vctrs_0.6.5       stringi_1.8.7     lifecycle_1.0.4  
+[9] rlang_1.1.6      
+> #-----------------------------------------------------------------------------#
+> 
+> proc.time()
+   user  system elapsed 
+   0.54    0.06    9.03 
