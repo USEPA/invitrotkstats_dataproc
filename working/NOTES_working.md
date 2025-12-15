@@ -3,6 +3,17 @@
   This sub-directory contains raw data, R data processing scripts, and other scripts/data files used during IVTKS (in vitro high-throughput toxicokinetic assay) data processing. This document is meant to document important notes or comments useful for provenance regarding the files in this directory, e.g. organization, file renaming, etc. 
 
 ## Notes
+  
+  * 07/29/2025:
+      * Rename current R data files in 'final_RData' to include "uncomp" suffix.
+        (Note, these files will not be tracked with Git.)
+      * Create a script to update R data files currently in invitroTKdata to be
+        compressed versions (not tagged with "uncomp"), and resave/update the
+        R data files for the invitroTKdata R data package.
+      * Update the 'data_for_invitroTKdata_Rpackage.R' script to include
+        "xz" compression in saving commands in preparation for future runs of
+        the script. (Note, this script was not re-run for 'regenerating' the
+        data files.)
 
   * 07/21/2025:
       * Remove unprocessed files not currently needed.
