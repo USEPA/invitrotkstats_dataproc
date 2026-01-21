@@ -41,11 +41,13 @@ Final datasets (extension ".RData") should be copied to the "final_RData" direct
 
 ## Contributors
 
-John Wambaugh [wambaugh.john@epa.gov] (Conceptualization, Data Processing, & Subject Matter Expert)
+Caroline Ring [ring.caroline@epa.gov] (Project Lead & Maintainer)
 
 Barbara Wetmore [wetmore.barbara@epa.gov] (Raw Data Generation & Subject Matter Expert)
 
-Sarah Davidson-Fritz [davidsonfritz.sarah@epa.gov] (Software Development)
+Sarah Davidson-Fritz (Software Development)
+
+John Wambaugh (Conceptualization, Data Processing, & Subject Matter Expert)
 
 Anna Kreutz (Raw Data Generation)
 
